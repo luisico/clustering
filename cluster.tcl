@@ -8,9 +8,9 @@
 ## Example code to add this plugin to the VMD extensions menu:
 #
 #  if { [catch {package require cluster} msg] } {
-#    puts "VMD CLUSTER package could not be loaded:\n$msg"
+#    puts "VMD clustering package could not be loaded:\n$msg"
 #  } elseif { [catch {menu tk register "cluster" cluster} msg] } {
-#    puts "VMD CLUSTER could not be started:\n$msg"
+#    puts "VMD clustering could not be started:\n$msg"
 #  }
 
 # Authors:
@@ -29,10 +29,10 @@
 
 
 # Tell Tcl that we're a package and any dependencies we may have
-package provide cluster 1.0
+package provide clustering 1.0
 
-namespace eval ::CLUSTER:: {
-  namespace export cluster
+namespace eval ::clustering:: {
+  namespace export clustering
   variable w                         ;# handle to main window
 
   variable cluster
@@ -48,7 +48,7 @@ namespace eval ::CLUSTER:: {
 }
 
 #############################################################################
-# proc ::CLUSTER::getfile {} {
+# proc ::clustering::getfile {} {
 #   variable clust_file
 #   variable newfile
   
@@ -62,7 +62,7 @@ namespace eval ::CLUSTER:: {
 #   }
 # }
 
-proc ::CLUSTER::UpdateLevels {} {
+proc ::clustering::UpdateLevels {} {
   variable clust_level
   variable clust_list
   variable conf_list
@@ -72,7 +72,7 @@ proc ::CLUSTER::UpdateLevels {} {
   # Clean
   $clust_list delete 0 end
   $conf_list delete 0 end
-  ::CLUSTER::del_reps $clust_mol
+  ::clustering::del_reps $clust_mol
 
   # Add info
   set level [$clust_level get [$clust_level curselection]]
@@ -82,18 +82,18 @@ proc ::CLUSTER::UpdateLevels {} {
   #puts "DEBUG: names $names"
   for {set i 1} {$i <= $nclusters} {incr i} {
     regsub "$level:" [lindex $names [expr $i-1]] {} name
-    ::CLUSTER::populate $level $i $name
-    ::CLUSTER::add_rep $level $i $name
+    ::clustering::populate $level $i $name
+    ::clustering::add_rep $level $i $name
   }
 
   $clust_list selection set 0 [expr $nclusters-1]
   $conf_list selection set 0 end
   if {[$clust_list get [expr $nclusters-1]] == "outl"} {
-    ::CLUSTER::clus_onoff 0 [expr $nclusters-1]
+    ::clustering::clus_onoff 0 [expr $nclusters-1]
   }
 }
 
-proc ::CLUSTER::populate { level cluster_num name} {
+proc ::clustering::populate { level cluster_num name} {
   variable clust_list
   variable conf_list
   variable clust_mol
@@ -126,7 +126,7 @@ proc ::CLUSTER::populate { level cluster_num name} {
 }
 
 # Add rep for a cluster
-proc ::CLUSTER::add_rep { level cluster_num name} {
+proc ::clustering::add_rep { level cluster_num name} {
   variable cluster
   variable clust_mol
   variable max_colors
@@ -138,7 +138,7 @@ proc ::CLUSTER::add_rep { level cluster_num name} {
   set c [expr $cluster_num-1]
   
   mol rep lines
-  mol selection [::CLUSTER::set_sel]
+  mol selection [::clustering::set_sel]
   mol addrep $clust_mol
   mol drawframes $clust_mol $c $frames
   if {$c < $max_colors} {
@@ -155,14 +155,14 @@ proc ::CLUSTER::add_rep { level cluster_num name} {
 }
 
 # Delete all reps
-proc ::CLUSTER::del_reps { clust_mol } {
+proc ::clustering::del_reps { clust_mol } {
   set numreps [molinfo $clust_mol get numreps]
   for {set f 0} {$f <= $numreps} {incr f 1} {
     mol delrep 0 $clust_mol
   }
 }
 
-proc ::CLUSTER::apply_sel {} {
+proc ::clustering::apply_sel {} {
   variable cluster
   variable clust_mol
   variable clust_level
@@ -171,12 +171,12 @@ proc ::CLUSTER::apply_sel {} {
   set level [$clust_level get [$clust_level curselection]]
   set nclusters [llength [array names cluster $level:*]]
   for {set i 0} {$i < $nclusters} {incr i} {
-      mol modselect $i $clust_mol [::CLUSTER::set_sel]
+      mol modselect $i $clust_mol [::clustering::set_sel]
   }
 
 }
 
-proc ::CLUSTER::UpdateClusters {} {
+proc ::clustering::UpdateClusters {} {
   variable clust_list
   variable cluster
   variable clust_level
@@ -186,27 +186,27 @@ proc ::CLUSTER::UpdateClusters {} {
 
   for {set i 0} {$i < $nclusters} {incr i} {
     if {[$clust_list selection includes $i]} {
-      ::CLUSTER::clus_onoff 1 $i
+      ::clustering::clus_onoff 1 $i
     } else {
-      ::CLUSTER::clus_onoff 0 $i
+      ::clustering::clus_onoff 0 $i
     }
   }
 }
 
 # Set on/off one or more clusters
-proc ::CLUSTER::clus_onoff_all { state } {
+proc ::clustering::clus_onoff_all { state } {
   variable cluster
   variable clust_level
 
   set level [$clust_level get [$clust_level curselection]]
   set nclusters [llength [array names cluster $level:*]]
   for {set c 0} {$c < $nclusters} {incr c 1} {
-    ::CLUSTER::clus_onoff $state $c
+    ::clustering::clus_onoff $state $c
   }
 }
 
 # Set on/off a cluster
-proc ::CLUSTER::clus_onoff { state clus } {
+proc ::clustering::clus_onoff { state clus } {
   variable clust_mol
   variable cluster
   variable clust_list
@@ -242,16 +242,16 @@ proc ::CLUSTER::clus_onoff { state clus } {
 }
 
 # Set on one or more clusters
-proc ::CLUSTER::clus_on { clus } {
-  ::CLUSTER::clus_onoff 1 $clus
+proc ::clustering::clus_on { clus } {
+  ::clustering::clus_onoff 1 $clus
 }
 
 # Set off one or more clusters
-proc ::CLUSTER::clus_off { clus } {
-  ::CLUSTER::clus_onoff 0 $clus
+proc ::clustering::clus_off { clus } {
+  ::clustering::clus_onoff 0 $clus
 }
 
-proc ::CLUSTER::UpdateConfs {} {
+proc ::clustering::UpdateConfs {} {
   variable clust_mol
   variable conf_list
   variable cluster
@@ -305,7 +305,7 @@ proc ::CLUSTER::UpdateConfs {} {
   }
 }
 
-proc ::CLUSTER::UpdateMolecules { args } {
+proc ::clustering::UpdateMolecules { args } {
   # Code adapted from the ramaplot plugin
   variable w
   variable clust_mol
@@ -321,14 +321,14 @@ proc ::CLUSTER::UpdateMolecules { args } {
         $w.status.mol_entry configure -state normal 
         $w.status.mol_entry.menu add radiobutton -value $id \
 	  -label "$id [molinfo $id get name]" \
-	  -variable ::CLUSTER::clust_mol
+	  -variable ::clustering::clust_mol
       }
     }
   }
 }
 
 # Convert a VMD color index to rgb
-proc ::CLUSTER::index2rgb {i} {
+proc ::clustering::index2rgb {i} {
   set len 2
   lassign [colorinfo rgb $i] r g b
   set r [expr int($r*255)]
@@ -343,23 +343,23 @@ proc ::CLUSTER::index2rgb {i} {
 
 #############################################################################
 # This gets called by VMD the first time the menu is opened
-proc cluster {} {
-  ::CLUSTER::cluster
-  return $CLUSTER::w
-}
+#proc cluster {} {
+#  ::clustering::cluster
+#  return $clustering::w
+#}
 
-#proc cluster_tk_cb {} {
+proc clustering_tk_cb {} {
 #  variable foobar
 #  # Don't destroy the main window, because we want to register the window
 #  # with VMD and keep reusing it.  The window gets iconified instead of
 #  # destroyed when closed for any reason.
-#  #set foobar [catch {destroy $::CLUSTER::w  }]  ;# destroy any old windows
+#  #set foobar [catch {destroy $::clustering::w  }]  ;# destroy any old windows
 #
-#  ::CLUSTER::cluster;
-#  return $CLUSTER::w
-#}
+  ::clustering::cluster;
+  return $clustering::w
+}
 
-proc ::CLUSTER::destroy {} {
+proc ::clustering::destroy {} {
   # Delete traces
   # Delete remaining selections
 
@@ -369,7 +369,7 @@ proc ::CLUSTER::destroy {} {
 }
 
 #############################################################################
-proc ::CLUSTER::cluster {} {
+proc ::clustering::cluster {} {
   variable w ;# Tk window
 
   variable cluster
@@ -399,7 +399,6 @@ proc ::CLUSTER::cluster {} {
   wm resizable $w 1 1
   bind $w <Destroy> [namespace current]::destroy
 
-  
   # Menubar
   frame $w.top
   frame $w.top.menubar -relief raised -bd 2
@@ -409,7 +408,7 @@ proc ::CLUSTER::cluster {} {
   menubutton $w.top.menubar.import -text "Import" -underline 0 -menu $w.top.menubar.import.menu
   pack $w.top.menubar.import -side left
   menu $w.top.menubar.import.menu -tearoff no
-  $w.top.menubar.import.menu add command -label "NMRCLUSTER..."  -command [namespace code import_nmrcluster]
+  $w.top.menubar.import.menu add command -label "NMRclustering..."  -command [namespace code import_nmrcluster]
   $w.top.menubar.import.menu add command -label "Xcluster..."  -command [namespace code import_xcluster]
 
   # Menubar / Help menu
@@ -417,6 +416,7 @@ proc ::CLUSTER::cluster {} {
   pack $w.top.menubar.help -side right
   menu $w.top.menubar.help.menu -tearoff no
   $w.top.menubar.help.menu add command -label "Help" -command "vmd_open_url page.html"
+  $w.top.menubar.help.menu add command -label "About" -command [namespace current]::about
   
   pack $w.top -fill x
 
@@ -471,7 +471,7 @@ proc ::CLUSTER::cluster {} {
 
   # Options / join 1 member clusters
   frame $w.options.join
-  checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable CLUSTER::join_1members
+  checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable clustering::join_1members
   pack  $w.options.join.cb -side top -anchor nw
   pack $w.options.join -side top -anchor nw
   set join_1members 1
@@ -492,13 +492,13 @@ proc ::CLUSTER::cluster {} {
 
   label $w.status.clustfile_label -text "File:"
   pack  $w.status.clustfile_label -side left
-  entry $w.status.clustfile_entry -textvariable CLUSTER::clust_file
+  entry $w.status.clustfile_entry -textvariable clustering::clust_file
   pack  $w.status.clustfile_entry -side left -fill x -expand 1
 
   label $w.status.mol_label -text "Mol:"
   pack  $w.status.mol_label -side left
   menubutton $w.status.mol_entry -relief raised -bd 2 -direction flush \
-	-textvariable ::CLUSTER::clust_mol \
+	-textvariable ::clustering::clust_mol \
 	-menu $w.status.mol_entry.menu
   menu $w.status.mol_entry.menu
   pack  $w.status.mol_entry -side left
@@ -506,11 +506,11 @@ proc ::CLUSTER::cluster {} {
   pack $w.status -fill x
 
   # Set up the molecule list
-  trace variable vmd_initialize_structure w ::CLUSTER::UpdateMolecules
-  ::CLUSTER::UpdateMolecules
+  trace variable vmd_initialize_structure w ::clustering::UpdateMolecules
+  ::clustering::UpdateMolecules
 }
   
-proc ::CLUSTER::import_nmrcluster {} {
+proc ::clustering::import_nmrcluster {} {
   variable clust_file
   variable clust_level
   variable clust_mol
@@ -550,12 +550,12 @@ proc ::CLUSTER::import_nmrcluster {} {
     $clust_level insert end 0
     $clust_level selection set 0
 
-    ::CLUSTER::UpdateLevels
+    ::clustering::UpdateLevels
   }
   return
 }
 
-proc ::CLUSTER::import_xcluster {} {
+proc ::clustering::import_xcluster {} {
   variable clust_file
   variable clust_level
   variable clust_mol
@@ -596,16 +596,27 @@ proc ::CLUSTER::import_xcluster {} {
     
     $clust_level selection set 0
 
-    ::CLUSTER::UpdateLevels
+    ::clustering::UpdateLevels
 
   }
   return
 }
 
-proc ::CLUSTER::set_sel {} {
+proc ::clustering::set_sel {} {
   variable w
   regsub -all "\#.*?\n" [$w.options.sel.text get 1.0 end] "" temp1
   regsub -all "\n" $temp1 " " temp2
   regsub -all " $" $temp2 "" sel
   return $sel
 }
+
+proc ::clustering::about { } {
+    set vn [package present luis]
+    tk_messageBox -title "About Clustering $vn" -message \
+"Clustering version $vn
+
+Copyright (C) Luis Gracia <lug2002@med.cornell.edu> 
+
+"
+}   
+
