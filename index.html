@@ -128,7 +128,14 @@ Send a mail to the <A HREF="#Cluster_author">author</A> if you would like to be 
 <LI><B>Download</B> the plugin from <A HREF="#Cluster_download">here</A> to the directory where you store your VMD plugins. Skip to point <B>4</B> if you are updating the plugin.
 <LI>Add the following line to a file called <B><EM>pkgIndex.tcl</EM></B> in the same directory as the plugin (create it if it does not exists, or get it from <A HREF="http://icbtools.med.cornell.edu/viewcvs/viewcvs.cgi/*checkout*/vmdplugins/cluster/pkgIndex.tcl">here</A>):</P>
 <PRE>package ifneeded clustering 1.0 [list source [file join $dir cluster.tcl]]</PRE>
-<LI>Add the following to your <B><EM>.vmdrc</EM></B> startup file (or create one) (for unix the path should be <EM>$HOME/.vmdrc</EM>, and for windows <EM>%USERPROFILE%\vmd.rc</EM>):<BR>
+<LI>Add the following to your <B><EM>.vmdrc</EM></B> startup file (or create one) (for unix the path should be <EM>$HOME/.vmdrc</EM>, and for windows <EM>%USERPROFILE%\vmd.rc</EM>):
+  <OL type="a">
+  <LI><B>For VMD 1.8.3 and up</B>
+<PRE>
+lappend auto_path {/path/to/your/plugins/directory}
+vmd_install_extension clustering clustering "WMC PhysBio/Cluster"
+</PRE>
+  <LI><B>For VMD 1.8.2 and down</B>
 <PRE>
 lappend auto_path {/path/to/your/plugins/directory}
 if { [catch "package require clustering" msg] } {
@@ -137,8 +144,9 @@ if { [catch "package require clustering" msg] } {
   puts "VMD Cluster could not be started:\n$msg"
 }
 </PRE>
+  </OL>
 <P>Remember to correct the path to your plugins directory; i.e, if you saved the plugin in <EM>/home/user/myplugins</EM>, write that same path in the <EM>auto_path</EM> line.
-<P><B>Note:</B>If you created the <EM>.vmdrc</EM> file, remember to add <B><EM>menu main on</EM></B> to get the main menu back.</P>
+<P><B>Note:</B> If you created the <EM>.vmdrc</EM> file, remember to add <B><EM>menu main on</EM></B> to get the main menu back.</P>
 
 <LI><B>Start</B> VMD. The Cluster plugin should be accessible from the <EM>Extensions menu</EM>.</P>
 
@@ -153,7 +161,7 @@ if { [catch "package require clustering" msg] } {
 <TR><TD CLASS="address">
 <ADDRESS>
 <A HREF="mailto:lug2002@med.cornell.edu">Luis Gracia</A>
-| last updated: Tuesday, January 18, 2005
+| last updated: Wednesday, July 27, 2005
 <!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
 </ADDRESS>
 </TD></TR>
