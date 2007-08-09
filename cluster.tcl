@@ -18,7 +18,7 @@
 
 
 # ToDo:
-# - use better colors.
+# - use better colors (increase to new vmd standard? 32).
 # - add link to the help file.
 # - control clusters of different molecules:
 #   - add a dimension to array cluster.
@@ -111,7 +111,8 @@ proc ::clustering::populate { level cluster_num name} {
   if {[colorinfo index [colorinfo category Display Background]] == $color} {
     set color [expr $color-$max_colors/2]
   }
-
+  #puts "DEBUG: color $color"
+  
   $clust_list insert end $name
   $clust_list itemconfigure $j -selectbackground [index2rgb $color]
   foreach this $cluster($level:$name) {
@@ -408,8 +409,9 @@ proc ::clustering::cluster {} {
   menubutton $w.top.menubar.import -text "Import" -underline 0 -menu $w.top.menubar.import.menu
   pack $w.top.menubar.import -side left
   menu $w.top.menubar.import.menu -tearoff no
-  $w.top.menubar.import.menu add command -label "NMRclustering..."  -command [namespace code import_nmrcluster]
-  $w.top.menubar.import.menu add command -label "Xcluster..."  -command [namespace code import_xcluster]
+  $w.top.menubar.import.menu add command -label "NMRcluster..."  -command [namespace code import_nmrcluster]
+  $w.top.menubar.import.menu add command -label "Xcluster..."    -command [namespace code import_xcluster]
+  $w.top.menubar.import.menu add command -label "R cutree..."    -command [namespace code r_cutree]
 
   # Menubar / Help menu
   menubutton $w.top.menubar.help -text "Help" -menu $w.top.menubar.help.menu
@@ -471,8 +473,8 @@ proc ::clustering::cluster {} {
 
   # Options / join 1 member clusters
   frame $w.options.join
-  checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable clustering::join_1members
-  pack  $w.options.join.cb -side top -anchor nw
+  checkbutton $w.options.join.cb -text "Join 1 member clusters (on import)" -variable clustering::join_1members
+  pack $w.options.join.cb -side top -anchor nw
   pack $w.options.join -side top -anchor nw
   set join_1members 1
 
@@ -602,6 +604,81 @@ proc ::clustering::import_xcluster {} {
   return
 }
 
+proc ::clustering::r_cutree {} {
+  variable clust_file
+  variable clust_level
+  variable clust_mol
+  variable cluster
+  variable join_1members
+
+  set colors [colorinfo colors]
+
+  set clust_file [tk_getOpenFile \
+		    -title "Cluster filename" \
+		    -filetypes [list {"Cluster files" {.dat}} {"All Files" *}] ]
+
+  if {[file readable $clust_file]} {
+    set fileid [open $clust_file "r"]
+    if {[array exists cluster]} {unset cluster}
+    $clust_level delete 0 end
+
+    # Read data
+    set sep { }
+
+    # - levels
+    gets $fileid line
+    set levels [split $line $sep]
+    #puts "DEBUG: levels [join $levels {, }]"
+    foreach level $levels {
+      $clust_level insert end $level
+    }
+
+    # - membership
+    while {![eof $fileid]} {
+      gets $fileid line
+      if { [regexp {^$} $line dummy] } {
+      } elseif { [regexp {^#} $line dummy] } {
+      } else {
+	set temp [split $line $sep]
+	set obj [lindex $temp 0]
+	set membership [lrange $temp 1 end]
+	#puts "DEBUG: obj $obj; membership [join $membership {, }]"
+	for {set i 0} {$i < [llength $membership]} {incr i} {
+	  set level [lindex $levels $i]
+	  set clust_num [lindex $membership $i]
+	  #puts "DEBUG: assign $i - $level - $clust_num"
+	  lappend cluster($level:$clust_num) $obj
+	}
+
+      }
+    }
+    close $fileid
+    
+    # Join 1 members?
+    if {$join_1members} {
+      foreach level $levels {
+	set nclusters [llength [array names cluster $level:*]]
+	set names [lsort -dictionary [array names cluster $level:*]]
+	#puts "$level -- $names"
+	for {set i 1} {$i <= $nclusters} {incr i} {
+	  regsub "$level:" [lindex $names [expr $i-1]] {} name
+	  #puts "$name - $cluster($level:$name)"
+	  if {[llength $cluster($level:$name)] == 1} {
+	    lappend cluster($level:outl) $cluster($level:$name)
+	    unset cluster($level:$name)
+	  }
+	}
+      }
+    }
+
+    $clust_level selection set 0
+
+    ::clustering::UpdateLevels
+
+  }
+  return
+}
+
 proc ::clustering::set_sel {} {
   variable w
   regsub -all "\#.*?\n" [$w.options.sel.text get 1.0 end] "" temp1
@@ -619,4 +696,3 @@ Copyright (C) Luis Gracia <lug2002@med.cornell.edu>
 
 "
 }   
-
