@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
   <LINK REL="stylesheet" HREF="http://physiology.med.cornell.edu/resources/physbio.css" TYPE="text/css">
-  <LINK REL="stylesheet" HREF="../vmd.css" TYPE="text/css">
+  <LINK REL="stylesheet" HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/vmd.css" TYPE="text/css">
   <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
   <TITLE>VMD plugin Cluster</TITLE>
   <META NAME="AUTHOR" CONTENT="Luis Gracia">
@@ -13,21 +13,34 @@
 <TR><TD><A HREF="http://physiology.med.cornell.edu/"><IMG SRC="http://physiology.med.cornell.edu/images/header.jpg" BORDER=0 ALT="physiology"></A></TD></TR>
 <TR><TD>
 
-<H4><A HREF="../index.html">VMD plugins at WMC Physiology & Biophysics</A></H4>
+<H4><A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/index.html">VMD plugins at WMC Physiology & Biophysics</A></H4>
 <H1>Cluster: Clustering Tool </H1>
 
-<H2><A NAME="Cluster_description">Description</A></H2>
+<H3>
+<A HREF="#description">Description</A> |
+<A HREF="#usage">Usage</A> |
+<A HREF="#download">Download</A> |
+<A HREF="#install">Installation</A> |
+<A HREF="#author">Author</A>
+</H3>
+
+<H2><A NAME="description">Description</A></H2>
 
 <EM>Cluster</EM> is a VMD plugin to visualize clusters of conformations of a structure. Each conformation is color coded according to the cluster to which it belongs. This is done by creating one representation for each cluster, and setting the <EM>Draw Multiple frames</EM> variable to the corresponding frame numbers.
 
 <P>Features include:</P>
 <UL>
-  <LI>Import results from <A HREF="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</A> and <A HREF="http://www.schrodinger.com/">Xcluster</A> (new since version 1.3)
+  <LI>Import results from:
+    <UL>
+      <LI><A HREF="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</A> (link doesn't work anymore).
+      <LI><A HREF="http://www.schrodinger.com/">Xcluster</A> (version 1.3 and up).
+      <LI><A HREF="http://www.cran.org">R</A> hierarchical clustering (version 1.6 and up).
+    </UL>
   <LI>Color conformations by cluster.
   <LI>Selection of clusters and conformations to display.
-  <LI>Since version 1.3 multiple levels of clustering supported (see Xcluster manual).
-  <LI>Change atoms selection to represent (new since version 1.4).
-  <LI>Join cluster of only one member in common cluster (outliers) (new since version 1.4).
+  <LI>Multiple levels of clustering (version 1.3 and up).
+  <LI>Change representation (version 1.4 and up).
+  <LI>Join single member clusters in a separate cluster (version 1.4 and up).
 </UL>
 
 <CENTER><TABLE>
@@ -37,36 +50,75 @@
   </TR>
 </TABLE></CENTER>
 
-<H2><A NAME="Cluster_usage">Usage</A></H2>
+<H2><A NAME="usage">Usage</A></H2>
 
 <P>To use the <EM>Cluster plugin</EM> you need:
 <OL>
-  <LI><B>Generate</B> the clusters with either NMRCLUSTER or Xcluster.
-  <LI><B>Load a trajectory</B> with all the conformations into VMD.
-  <LI>Select the <B>atoms</B> you want to represent in the atom selection box. <B>Note</B>: use molecule 0 (and only 0, sorry, have to find time to fix this) for the trajectory you are clustering and any other molecule to show extra representations. Any representations in the trajectory to cluster will be deleted.
-  <LI><B>Import</B> the output from NMRCLUSTER or Xcluster:
+  <LI><B>Load a trajectory</B> of the conformations used for clustering into VMD.
+  <LI>In the atom selection box, select the <B>atoms</B> you want to use as representation. <B>Note</B>: use molecule 0 (and only 0, sorry, have to find time to fix this) for the trajectory you are clustering and any other molecule to show extra representations. Any representations in the trajectory to cluster will be deleted.
+  <LI><B>Generate</B> the clusters with <EM>NMRCLUSTER</EM>, <EM>Xcluster</EM> or <EM>R</EM> and <B>Import</B> the results into the plugin:
   <UL>
-    <LI>For <B>NMRCLUSTER</B> import the "Cluster.log" file, only a level (0) will be availabe. Outliers will be together in the last cluster.
-    <LI>For <B>Xcluster</B> import the .clg file where you saved your output. In order to have some information about the clusters you need to save the levels you want to see in VMD in the .clg file (look in the Xcluster manual for the <EM>Writecls</EM> command). Only those levels will be available to the <EM>Cluster plugin</EM>. Activate <B>Join 1 member clusters</B> if you want all this single member clusters be joined in a common cluster name <EM>outl</EM> (outliers).
+    <LI>For <B>NMRCLUSTER</B> import the <EM>"Cluster.log"</EM> file, only a level (0) will be availabe. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
+    <LI>For <B>Xcluster</B> import the <EM>".clg"</EM> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <EM>Writecls</EM> command).
+    <LI>For <B>R</B> follow this procedure:
+      <OL>
+	<LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest to output the results in matrix format).
+	<LI>Load the data in R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
+	  <PRE>
+	    data = scan('/path/to/rmsd.mat')
+	    rmsd = matrix(data, nrow=sqrt(length(data)), ncol=sqrt(length(data)))
+	    library(cluster)
+	    cluster = agnes(rmsd, diss=T)
+	  </PRE>
+	<LI>Cut the tree into groups (levels) using <EM>cutree</EM>. You can cut into one or more groupings. For example
+	  <PRE>
+	    levels = cutree(cluster, k=2:5)
+	  </PRE>
+	  will output the cluster membership of each object for levels 2 to 5.
+	<LI>Write the results to a file to input into the Cluster plugin:
+	  <PRE>
+	    write.table(levels, file='levels.dat', quote=F)
+	  </PRE>
+	<LI>Import the file into the Cluster plugin.
+      </OL>
   </UL>
-  <LI>Select the <B>level</B> you want to see. The clusters list will be updated together with the colors of the conformations. All cluster will be displayed when you change the level.
-  <LI>Select / deselect the <B>clusters</B> to activate / deactivate them in the VMD display window.
-  <LI>Select / deselect the <B>conformations</B> to activate / deactivate individual conformations in the VMD display window.
-  <LI>The <B>All</B> and <B>None</B> buttons will turn on/off all the clusters and conformations.
-  <LI>The <B>atom selection</B> to represent can be change in the atom selection box and changed will apply once you press the button.
+  <LI>Managing the GUI:
+    <UL>
+      <LI>Select the <B>level</B> you want to see. The list of clusters will be updated together with the colors of the conformations. All clusters will be displayed when you change the level.
+      <LI>Select/Deselect <B>clusters</B> to activate/deactivate them.
+      <LI>Select/Deselect <B>conformations</B> to activate/deactivate individual conformations.
+      <LI><B>All</B> and <B>None</B> turn on/off all the clusters and conformations.
+      <LI>Activate <B>Join 1 member clusters</B> to display all single member clusters in a separate cluster (<EM>outl</EM>).
+      <LI>The <B>atom selection</B> to represent can be change in the atom selection box. Click the <EM>Update Selection</EM> button to apply the changes.
+    </UL>
 </OL>
 
-<H2><A NAME="Cluster_download">Download</A></H2>
+<H2><A NAME="download">Download</A></H2>
 
-Send a mail to the <A HREF="#Cluster_author">author</A> if you would like to be informed about new updates of this plugin.
+Send a mail to the <A HREF="#author">author</A> if you would like to be informed about new updates of this plugin.
 
 <TABLE WIDTH=650 CLASS="plugin">
   <TR>
-    <TD CLASS="vertit"><B><A NAME="Cluster_last">1.5</A> (6 Apr'05)</B></TD>
+    <TD CLASS="vertit"><B><A NAME="Cluster_last">1.6</A> (13 Aug'07)</B></TD>
+      <TD CLASS="verdown">[<A HREF="versions/cluster-v1.6.tgz">download</A>]</TD>
+  </TR><TR>
+  </TR><TR>
+    <TD CLASS="verlog" COLSPAN=2>Change log:
+  <UL>
+    <LI>Added support for cluster output from R.
+    <LI>Join 1 member clusters works interactively (not just on import).
+    <LI>Upgraded number of colors to the vmd maximum.
+  </UL></TD>
+  </TR>
+</TABLE>
+
+<TABLE WIDTH=650 CLASS="plugin">
+  <TR>
+    <TD CLASS="vertit"><B>1.5 (6 Apr'05)</B></TD>
       <TD CLASS="verdown">[<A HREF="versions/1.5/cluster.tcl">download</A>]</TD>
   </TR><TR>
     <TD CLASS="verlog" COLSPAN=2><B>Note:</B>
-    Remember to change pkgIndex.tcl and the .vmdrc to reflect the change (see <A HREF="#Cluster_install">Installation notes</A>).
+    Remember to change pkgIndex.tcl and the .vmdrc to reflect the change (see <A HREF="#install">Installation notes</A>).
     </TD>
   </TR><TR>
     <TD CLASS="verlog" COLSPAN=2>Change log:
@@ -122,12 +174,10 @@ Send a mail to the <A HREF="#Cluster_author">author</A> if you would like to be 
   </TR>
 </TABLE>
 
-<H2><A NAME="Cluster_install">Installation</A></H2>
+<H2><A NAME="install">Installation</A></H2>
 
 <OL>
-<LI><B>Download</B> the plugin from <A HREF="#Cluster_download">here</A> to the directory where you store your VMD plugins. Skip to point <B>4</B> if you are updating the plugin.
-<LI>Add the following line to a file called <B><EM>pkgIndex.tcl</EM></B> in the same directory as the plugin (create it if it does not exists, or get it from <A HREF="http://icbtools.med.cornell.edu/viewcvs/viewcvs.cgi/*checkout*/vmdplugins/cluster/pkgIndex.tcl">here</A>):</P>
-<PRE>package ifneeded clustering 1.0 [list source [file join $dir cluster.tcl]]</PRE>
+<LI><B>Download</B> the plugin from <A HREF="#download">here</A> to the directory where you store your VMD plugins.
 <LI>Add the following to your <B><EM>.vmdrc</EM></B> startup file (or create one) (for unix the path should be <EM>$HOME/.vmdrc</EM>, and for windows <EM>%USERPROFILE%\vmd.rc</EM>):
   <OL type="a">
   <LI><B>For VMD 1.8.3 and up</B>
@@ -150,18 +200,18 @@ if { [catch "package require clustering" msg] } {
 
 <LI><B>Start</B> VMD. The Cluster plugin should be accessible from the <EM>Extensions menu</EM>.</P>
 
-<H2><A NAME="Cluster_author">Author</A></H2>
+<H2><A NAME="author">Author</A></H2>
 
 <P>Send comments and feedback to <A HREF="mailto:lug2002@med.cornell.edu">Luis Gracia</A>.</P>
 
 </TD></TR>
 
-<TR><TD CLASS="footer">Copyright &copy; 2004-2005, Weill Medical College of Cornell University. All Rights Reserved</TD></TR>
+<TR><TD CLASS="footer">Copyright &copy; 2004-2007, Weill Medical College of Cornell University. All Rights Reserved</TD></TR>
 
 <TR><TD CLASS="address">
 <ADDRESS>
 <A HREF="mailto:lug2002@med.cornell.edu">Luis Gracia</A>
-| last updated: Wednesday, July 27, 2005
+| last updated: Monday, August 13, 2007
 <!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
 </ADDRESS>
 </TD></TR>
