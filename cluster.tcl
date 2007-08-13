@@ -31,24 +31,22 @@
 # Tell Tcl that we're a package and any dependencies we may have
 package provide clustering 1.0
 
-namespace eval ::clustering:: {
+namespace eval clustering {
   namespace export clustering
   variable w                         ;# handle to main window
 
   variable cluster
+  variable cluster0
   variable clust_file
   variable clust_mol
   variable clust_list
   variable clust_level
   variable conf_list
   variable join_1members
-  variable max_colors
-  set max_colors 17
-
 }
 
 #############################################################################
-# proc ::clustering::getfile {} {
+# proc clustering::getfile {} {
 #   variable clust_file
 #   variable newfile
   
@@ -62,160 +60,149 @@ namespace eval ::clustering:: {
 #   }
 # }
 
-proc ::clustering::UpdateLevels {} {
+proc clustering::UpdateLevels {} {
   variable clust_level
   variable clust_list
   variable conf_list
   variable clust_mol
   variable cluster
+  variable cluster0
+  variable join_1members
+  variable color
 
-  # Clean
+  # Reset
   $clust_list delete 0 end
   $conf_list delete 0 end
-  ::clustering::del_reps $clust_mol
+  set color -1
+  [namespace current]::del_reps $clust_mol
 
-  # Add info
+  # Copy cluster/level to cluster0
   set level [$clust_level get [$clust_level curselection]]
-  set nclusters [llength [array names cluster $level:*]]
-  #puts "DEBUG: level= $level ; nclusters= $nclusters"
-  set names [lsort -dictionary [array names cluster $level:*]]
-  #puts "DEBUG: names $names"
+  if {[array exists cluster0]} {unset cluster0}
+  foreach key [array names cluster $level:*] {
+    regsub "$level:" $key {} name
+    set cluster0($name) $cluster($key)
+  }
+  
+  # Join 1 members if requested
+  if {$join_1members} {
+    [namespace current]::join_1members
+  }
+
+  set nclusters [array size cluster0]
+  set names [lsort -dictionary [array names cluster0]]
+  #puts "DEBUG: nclusters= $nclusters; names $names"
+
+  # Populate conformations and add representations
+  puts [array get cluster0]
   for {set i 1} {$i <= $nclusters} {incr i} {
     regsub "$level:" [lindex $names [expr $i-1]] {} name
-    ::clustering::populate $level $i $name
-    ::clustering::add_rep $level $i $name
+    [namespace current]::populate $i $name
+    [namespace current]::add_rep $i $name
   }
 
   $clust_list selection set 0 [expr $nclusters-1]
   $conf_list selection set 0 end
   if {[$clust_list get [expr $nclusters-1]] == "outl"} {
-    ::clustering::clus_onoff 0 [expr $nclusters-1]
+    [namespace current]::clus_onoff 0 [expr $nclusters-1]
   }
 }
 
-proc ::clustering::populate { level cluster_num name} {
+proc clustering::populate {cluster_num name} {
   variable clust_list
   variable conf_list
-  variable clust_mol
-  variable cluster
-  variable max_colors
+  variable cluster0
 
-  #puts "DEBUG: populate level $level cluster $cluster_num ($name)"
+  puts "DEBUG: populate cluster $cluster_num ($name)"
   set j [expr $cluster_num-1]
 
-  if {$j < $max_colors} {
-    set color $j
-  } else {
-    set color [expr $j-$max_colors]
-  }
-  if {[colorinfo index [colorinfo category Display Background]] == $color} {
-    set color [expr $color-$max_colors/2]
-  }
-  #puts "DEBUG: color $color"
-  
+  # Choose color
+  set col [[namespace current]::next_color]
+
+  # Add conformations
   $clust_list insert end $name
-  $clust_list itemconfigure $j -selectbackground [index2rgb $color]
-  foreach this $cluster($level:$name) {
+  $clust_list itemconfigure $j -selectbackground [index2rgb $col]
+  foreach this $cluster0($name) {
     set size [$conf_list size]
     if {$size < $this} {
       for {set k $size} {$k < $this} {incr k 1} {
 	$conf_list insert end [expr $k+1]
       }
     }
-    $conf_list itemconfigure [expr $this-1] -selectbackground [index2rgb $color]
+    $conf_list itemconfigure [expr $this-1] -selectbackground [index2rgb $col]
   }
 }
 
-# Add rep for a cluster
-proc ::clustering::add_rep { level cluster_num name} {
-  variable cluster
-  variable clust_mol
-  variable max_colors
 
-  foreach f $cluster($level:$name) {
+# Add rep for a cluster
+proc clustering::add_rep {cluster_num name} {
+  variable cluster0
+  variable clust_mol
+  variable clust_list
+
+  foreach f $cluster0($name) {
     lappend frames [expr $f-1]
   }
 
-  set c [expr $cluster_num-1]
+  set j [expr $cluster_num-1]
   
   mol rep lines
-  mol selection [::clustering::set_sel]
+  mol selection [[namespace current]::set_sel]
   mol addrep $clust_mol
-  mol drawframes $clust_mol $c $frames
-  if {$c < $max_colors} {
-    set color $c
-  } else {
-    set color [expr $c-$max_colors]
-  }
-  if {[colorinfo index [colorinfo category Display Background]] == $color} {
-    set color [expr $color-$max_colors/2]
-  }
-  puts "DEBUG: color $color"
-  mol modcolor $c $clust_mol ColorID $color
+  mol drawframes $clust_mol $j $frames
+  set col [$clust_list itemcget $j -selectbackground]
+  #puts "DEBUG: color $col"
+  mol modcolor $j $clust_mol ColorID $col
   
 }
 
 # Delete all reps
-proc ::clustering::del_reps { clust_mol } {
+proc clustering::del_reps { clust_mol } {
   set numreps [molinfo $clust_mol get numreps]
   for {set f 0} {$f <= $numreps} {incr f 1} {
     mol delrep 0 $clust_mol
   }
 }
 
-proc ::clustering::apply_sel {} {
-  variable cluster
+proc clustering::apply_sel {} {
+  variable cluster0
   variable clust_mol
-  variable clust_level
-  variable clust_list
 
-  set level [$clust_level get [$clust_level curselection]]
-  set nclusters [llength [array names cluster $level:*]]
-  for {set i 0} {$i < $nclusters} {incr i} {
-      mol modselect $i $clust_mol [::clustering::set_sel]
+  for {set i 0} {$i < [array size cluster0]} {incr i} {
+      mol modselect $i $clust_mol [[namespace current]::set_sel]
   }
-
 }
 
-proc ::clustering::UpdateClusters {} {
+proc clustering::UpdateClusters {} {
   variable clust_list
-  variable cluster
-  variable clust_level
+  variable cluster0
 
-  set level [$clust_level get [$clust_level curselection]]
-  set nclusters [llength [array names cluster $level:*]]
-
-  for {set i 0} {$i < $nclusters} {incr i} {
+  for {set i 0} {$i < [array size cluster0]} {incr i} {
     if {[$clust_list selection includes $i]} {
-      ::clustering::clus_onoff 1 $i
+      [namespace current]::clus_onoff 1 $i
     } else {
-      ::clustering::clus_onoff 0 $i
+      [namespace current]::clus_onoff 0 $i
     }
   }
 }
 
 # Set on/off one or more clusters
-proc ::clustering::clus_onoff_all { state } {
-  variable cluster
-  variable clust_level
+proc clustering::clus_onoff_all { state } {
+  variable cluster0
 
-  set level [$clust_level get [$clust_level curselection]]
-  set nclusters [llength [array names cluster $level:*]]
-  for {set c 0} {$c < $nclusters} {incr c 1} {
-    ::clustering::clus_onoff $state $c
+  for {set c 0} {$c < [array size cluster0]} {incr c 1} {
+    [namespace current]::clus_onoff $state $c
   }
 }
 
 # Set on/off a cluster
-proc ::clustering::clus_onoff { state clus } {
+proc clustering::clus_onoff { state clus } {
   variable clust_mol
-  variable cluster
+  variable cluster0
   variable clust_list
   variable conf_list
-  variable clust_level
   variable w
 
-  set level [$clust_level get [$clust_level curselection]]
   set name [$clust_list get $clus]
   #puts "DEBUG: cluster $clus name $name"
 
@@ -225,7 +212,7 @@ proc ::clustering::clus_onoff { state clus } {
     $clust_list selection set $clus
   }
 
-  set this $cluster($level:$name)
+  set this $cluster0($name)
 
   if { $state == 0 } {
     foreach f $this {
@@ -243,30 +230,25 @@ proc ::clustering::clus_onoff { state clus } {
 }
 
 # Set on one or more clusters
-proc ::clustering::clus_on { clus } {
-  ::clustering::clus_onoff 1 $clus
+proc clustering::clus_on { clus } {
+  [namespace current]::clus_onoff 1 $clus
 }
 
 # Set off one or more clusters
-proc ::clustering::clus_off { clus } {
-  ::clustering::clus_onoff 0 $clus
+proc clustering::clus_off { clus } {
+  [namespace current]::clus_onoff 0 $clus
 }
 
-proc ::clustering::UpdateConfs {} {
+proc clustering::UpdateConfs {} {
   variable clust_mol
   variable conf_list
-  variable cluster
-  variable clust_level
+  variable cluster0
   variable clust_list
 
-  set level [$clust_level get [$clust_level curselection]]
-  set nclusters [llength [array names cluster $level:*]]
-
-  
   # Create reverse list
-  for {set c 0} {$c < $nclusters} {incr c 1} {
+  for {set c 0} {$c < [array size cluster0]} {incr c 1} {
    set name [$clust_list get $c]
-   foreach f $cluster($level:$name) {
+   foreach f $cluster0($name) {
       set confs($f) $c
     }
   }
@@ -280,7 +262,7 @@ proc ::clustering::UpdateConfs {} {
   
   # create new cluster
   if {![info exists on]} {
-    for {set c 0} {$c < $nclusters} {incr c} {
+    for {set c 0} {$c < [array size cluster0]} {incr c} {
       $clust_list selection clear $c
       mol showrep $clust_mol $c off
     }
@@ -292,7 +274,7 @@ proc ::clustering::UpdateConfs {} {
 
   # apply changes
   set names [array names frames]
-  for {set c 0} {$c < $nclusters} {incr c} {
+  for {set c 0} {$c < [array size cluster0]} {incr c} {
     if {[lsearch -exact $names $c] == -1} {
       $clust_list selection clear $c
       mol showrep $clust_mol $c off
@@ -306,7 +288,7 @@ proc ::clustering::UpdateConfs {} {
   }
 }
 
-proc ::clustering::UpdateMolecules { args } {
+proc clustering::UpdateMolecules { args } {
   # Code adapted from the ramaplot plugin
   variable w
   variable clust_mol
@@ -322,14 +304,36 @@ proc ::clustering::UpdateMolecules { args } {
         $w.status.mol_entry configure -state normal 
         $w.status.mol_entry.menu add radiobutton -value $id \
 	  -label "$id [molinfo $id get name]" \
-	  -variable ::clustering::clust_mol
+	  -variable [namespace current]::clust_mol
       }
     }
   }
 }
 
+# Select next available color
+proc clustering::next_color {} {
+  variable color
+
+  incr color
+  #puts "Color $color [lindex [colorinfo colors] $color]"
+
+  # Avoid same color as VMD background
+  if {[colorinfo index [colorinfo category Display Background]] == $color} {
+    incr color
+    #puts "     ...same as bg ... switch to $color"
+  }
+
+  # Recycle colors
+  if {$color > [colorinfo num]} {
+    set color 0
+    #puts "     ...over max ... switch to $color"
+  }
+  #puts "DEBUG: color $color"
+  return $color
+}
+
 # Convert a VMD color index to rgb
-proc ::clustering::index2rgb {i} {
+proc clustering::index2rgb {i} {
   set len 2
   lassign [colorinfo rgb $i] r g b
   set r [expr int($r*255)]
@@ -345,7 +349,7 @@ proc ::clustering::index2rgb {i} {
 #############################################################################
 # This gets called by VMD the first time the menu is opened
 #proc cluster {} {
-#  ::clustering::cluster
+#  [namespace current]::cluster
 #  return $clustering::w
 #}
 
@@ -354,13 +358,13 @@ proc clustering_tk_cb {} {
 #  # Don't destroy the main window, because we want to register the window
 #  # with VMD and keep reusing it.  The window gets iconified instead of
 #  # destroyed when closed for any reason.
-#  #set foobar [catch {destroy $::clustering::w  }]  ;# destroy any old windows
+#  #set foobar [catch {destroy $clustering::w  }]  ;# destroy any old windows
 #
-  ::clustering::cluster;
+  clustering::cluster;
   return $clustering::w
 }
 
-proc ::clustering::destroy {} {
+proc clustering::destroy {} {
   # Delete traces
   # Delete remaining selections
 
@@ -370,10 +374,11 @@ proc ::clustering::destroy {} {
 }
 
 #############################################################################
-proc ::clustering::cluster {} {
+proc clustering::cluster {} {
   variable w ;# Tk window
 
   variable cluster
+  variable cluster0
   variable clust_file
   variable clust_mol
   variable clust_list
@@ -430,22 +435,22 @@ proc ::clustering::cluster {} {
   label $w.data.level.label -text "Levels:"
   pack  $w.data.level.label -side top
   set clust_level [listbox $w.data.level.listbox -selectmode single -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.level.scroll set}] ]
-  pack  $clust_level -side left -fill y -expand 1
+  pack  $clust_level -side left -fill both -expand 1
   scrollbar $w.data.level.scroll -command [namespace code {$clust_level yview}]
   pack  $w.data.level.scroll -side left -fill y -expand 1
   bind $clust_level <<ListboxSelect>> [namespace code UpdateLevels]
-  pack $w.data.level -side left -fill y -expand 1
+  pack $w.data.level -side left -fill both -expand 1
 
   # Data / cluster
   frame $w.data.cluster
   label $w.data.cluster.label -text "Clusters:"
   pack  $w.data.cluster.label -side top
   set clust_list [listbox $w.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.cluster.scroll set}] ]
-  pack  $clust_list -side left -fill y -expand 1
+  pack  $clust_list -side left -fill both -expand 1
   scrollbar $w.data.cluster.scroll -command [namespace code {$clust_list yview}]
   pack  $w.data.cluster.scroll -side left -fill y -expand 1
   bind $clust_list <<ListboxSelect>> [namespace code UpdateClusters]
-  pack $w.data.cluster -side left -fill y -expand 1
+  pack $w.data.cluster -side left -fill both -expand 1
 
   # Data / buttons
   frame $w.data.buttons
@@ -460,31 +465,31 @@ proc ::clustering::cluster {} {
   label $w.data.confs.label -text "Confs:"
   pack  $w.data.confs.label -side top
   set conf_list [listbox $w.data.confs.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.confs.scroll set}] ]
-  pack $conf_list -side left -fill y -expand 1
+  pack $conf_list -side left -fill both -expand 1
   scrollbar $w.data.confs.scroll -command [namespace code {$conf_list yview}]
   pack  $w.data.confs.scroll -side left -fill y -expand 1
-  pack $w.data.confs -side left -fill y -expand 1
+  pack $w.data.confs -side left -fill both -expand 1
   bind $conf_list <<ListboxSelect>> [namespace code UpdateConfs]
 
-  pack $w.data -fill y -expand 1
+  pack $w.data -fill both -expand 1
 
   # Options
   frame $w.options -relief ridge -bd 2
 
   # Options / join 1 member clusters
   frame $w.options.join
-  checkbutton $w.options.join.cb -text "Join 1 member clusters (on import)" -variable clustering::join_1members
+  checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable clustering::join_1members -command [namespace code UpdateLevels]
   pack $w.options.join.cb -side top -anchor nw
   pack $w.options.join -side top -anchor nw
   set join_1members 1
 
   # Options / atoms selection
   frame $w.options.sel
-  button $w.options.sel.apply -text "Apply Selection:" -command [namespace code apply_sel]
-  pack  $w.options.sel.apply -side top -anchor nw
-  text $w.options.sel.text -selectborderwidth 0 -exportselection yes -height 3 -width 35 -wrap word
+  button $w.options.sel.apply -text "Update\nSelection" -command [namespace code apply_sel]
+  pack $w.options.sel.apply -side left -anchor nw
+  text $w.options.sel.text -selectborderwidth 0 -exportselection yes -height 3 -width 25 -wrap word
   $w.options.sel.text insert end "noh"
-  pack  $w.options.sel.text -side left -fill x -expand 1
+  pack $w.options.sel.text -side left -fill x -expand 1 -anchor nw
   pack $w.options.sel -side left -fill y
 
   pack $w.options -fill y
@@ -492,7 +497,7 @@ proc ::clustering::cluster {} {
   # Status
   frame $w.status -relief raised -bd 1
 
-  label $w.status.clustfile_label -text "File:"
+  label $w.status.clustfile_label -text "Cluster:"
   pack  $w.status.clustfile_label -side left
   entry $w.status.clustfile_entry -textvariable clustering::clust_file
   pack  $w.status.clustfile_entry -side left -fill x -expand 1
@@ -500,7 +505,7 @@ proc ::clustering::cluster {} {
   label $w.status.mol_label -text "Mol:"
   pack  $w.status.mol_label -side left
   menubutton $w.status.mol_entry -relief raised -bd 2 -direction flush \
-	-textvariable ::clustering::clust_mol \
+    -textvariable [namespace current]::clust_mol \
 	-menu $w.status.mol_entry.menu
   menu $w.status.mol_entry.menu
   pack  $w.status.mol_entry -side left
@@ -508,17 +513,14 @@ proc ::clustering::cluster {} {
   pack $w.status -fill x
 
   # Set up the molecule list
-  trace variable vmd_initialize_structure w ::clustering::UpdateMolecules
-  ::clustering::UpdateMolecules
+  trace variable vmd_initialize_structure w [namespace current]::UpdateMolecules
+  [namespace current]::UpdateMolecules
 }
   
-proc ::clustering::import_nmrcluster {} {
+proc clustering::import_nmrcluster {} {
   variable clust_file
   variable clust_level
-  variable clust_mol
   variable cluster
-
-  set colors [colorinfo colors]
 
   set clust_file [tk_getOpenFile \
 		    -title "Cluster filename" \
@@ -533,38 +535,30 @@ proc ::clustering::import_nmrcluster {} {
     set i 0
     while {![eof $fileid]} {	
       gets $fileid line
-      set found 0
       if { [ regexp {^Members:([ 0-9]+)} $line dummy data ] } {
 	incr i 1
-	set found 1
-      } elseif { [ regexp {^Outliers:([ 0-9]+)} $line dummy data ] } {
-	set i "outl"
-	set found 1
-      }
-      if {$found} {
 	set cluster(0:$i) $data
-	set found 0
+      } elseif { [ regexp {^Outliers:([ 0-9]+)} $line dummy data ] } {
+	foreach d $data {
+	  incr i 1
+	  set cluster(0:$i) $d
+	}
       }
-
     }
     close $fileid
 
     $clust_level insert end 0
     $clust_level selection set 0
 
-    ::clustering::UpdateLevels
+    [namespace current]::UpdateLevels
   }
   return
 }
 
-proc ::clustering::import_xcluster {} {
+proc clustering::import_xcluster {} {
   variable clust_file
   variable clust_level
-  variable clust_mol
   variable cluster
-  variable join_1members
-
-  set colors [colorinfo colors]
 
   set clust_file [tk_getOpenFile \
 		    -title "Cluster filename" \
@@ -585,33 +579,24 @@ proc ::clustering::import_xcluster {} {
       } elseif { [ regexp {^Cluster +([0-9]+); Leading member= +([0-9]+); +([0-9]+) members, sep_rat +([0-9.]+)} $line dummy clust_num clust_leader clust_size clust_sep] } {
 	#puts "DEBUG: cluster $clust_num $clust_leader $clust_size $clust_sep"
       } elseif { [ regexp {^([ 0-9]+)$} $line dummy dataline ] } {
-	if {$join_1members && $clust_size == 1} {
-	  append cluster($level:outl) $dataline
-	  #  puts "DEBUG: adding level $level outliers $outliers"
-	} else {
-	  append cluster($level:$clust_num) $dataline
-	  #puts "DEBUG: adding level $level cluster $clust_num data $dataline"
-	}
+	append cluster($level:$clust_num) $dataline
+	#puts "DEBUG: adding level $level cluster $clust_num data $dataline"
       }
     }
     close $fileid
     
     $clust_level selection set 0
 
-    ::clustering::UpdateLevels
+    [namespace current]::UpdateLevels
 
   }
   return
 }
 
-proc ::clustering::r_cutree {} {
+proc clustering::r_cutree {} {
   variable clust_file
   variable clust_level
-  variable clust_mol
   variable cluster
-  variable join_1members
-
-  set colors [colorinfo colors]
 
   set clust_file [tk_getOpenFile \
 		    -title "Cluster filename" \
@@ -649,37 +634,19 @@ proc ::clustering::r_cutree {} {
 	  #puts "DEBUG: assign $i - $level - $clust_num"
 	  lappend cluster($level:$clust_num) $obj
 	}
-
       }
     }
     close $fileid
     
-    # Join 1 members?
-    if {$join_1members} {
-      foreach level $levels {
-	set nclusters [llength [array names cluster $level:*]]
-	set names [lsort -dictionary [array names cluster $level:*]]
-	#puts "$level -- $names"
-	for {set i 1} {$i <= $nclusters} {incr i} {
-	  regsub "$level:" [lindex $names [expr $i-1]] {} name
-	  #puts "$name - $cluster($level:$name)"
-	  if {[llength $cluster($level:$name)] == 1} {
-	    lappend cluster($level:outl) $cluster($level:$name)
-	    unset cluster($level:$name)
-	  }
-	}
-      }
-    }
-
     $clust_level selection set 0
 
-    ::clustering::UpdateLevels
+    [namespace current]::UpdateLevels
 
   }
   return
 }
 
-proc ::clustering::set_sel {} {
+proc clustering::set_sel {} {
   variable w
   regsub -all "\#.*?\n" [$w.options.sel.text get 1.0 end] "" temp1
   regsub -all "\n" $temp1 " " temp2
@@ -687,7 +654,19 @@ proc ::clustering::set_sel {} {
   return $sel
 }
 
-proc ::clustering::about { } {
+proc clustering::join_1members {} {
+  variable cluster0
+
+  foreach name [array names cluster0] {
+    #puts "$name - $cluster0($name)"
+    if {[llength $cluster0($name)] == 1} {
+      lappend cluster0(outl) $cluster0($name)
+      unset cluster0($name)
+    }
+  }
+}
+
+proc clustering::about { } {
     set vn [package present luis]
     tk_messageBox -title "About Clustering $vn" -message \
 "Clustering version $vn
