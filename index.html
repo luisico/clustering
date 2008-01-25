@@ -33,14 +33,14 @@
   <LI>Import results from:
     <UL>
       <LI><A HREF="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</A> (link doesn't work anymore).
-      <LI><A HREF="http://www.schrodinger.com/">Xcluster</A> (version 1.3 and up).
-      <LI><A HREF="http://www.cran.org">R</A> hierarchical clustering (version 1.6 and up).
+      <LI><A HREF="http://www.schrodinger.com/">Xcluster</A>.
+      <LI><A HREF="http://www.r-project.org/">R</A> hierarchical <A HREF="http://cran.r-project.org/src/contrib/Descriptions/cluster.html">clustering</A>.
     </UL>
   <LI>Color conformations by cluster.
   <LI>Selection of clusters and conformations to display.
-  <LI>Multiple levels of clustering (version 1.3 and up).
-  <LI>Change representation (version 1.4 and up).
-  <LI>Join single member clusters in a separate cluster (version 1.4 and up).
+  <LI>Multiple levels of clustering.
+  <LI>Change representation.
+  <LI>Join single member clusters in a separate cluster.
 </UL>
 
 <CENTER><TABLE>
@@ -55,15 +55,15 @@
 <P>To use the <EM>Cluster plugin</EM> you need:
 <OL>
   <LI><B>Load a trajectory</B> of the conformations used for clustering into VMD.
-  <LI>In the atom selection box, select the <B>atoms</B> you want to use as representation. <B>Note</B>: use molecule 0 (and only 0, sorry, have to find time to fix this) for the trajectory you are clustering and any other molecule to show extra representations. Any representations in the trajectory to cluster will be deleted.
+  <LI>Define the <B>atom selection</B> and <B>molecule</B> to use as representation in vmd.
   <LI><B>Generate</B> the clusters with <EM>NMRCLUSTER</EM>, <EM>Xcluster</EM> or <EM>R</EM> and <B>Import</B> the results into the plugin:
   <UL>
     <LI>For <B>NMRCLUSTER</B> import the <EM>"Cluster.log"</EM> file, only a level (0) will be availabe. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
     <LI>For <B>Xcluster</B> import the <EM>".clg"</EM> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <EM>Writecls</EM> command).
     <LI>For <B>R</B> follow this procedure:
       <OL>
-	<LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest to output the results in matrix format).
-	<LI>Load the data in R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
+	<LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest writting the results in matrix format).
+	<LI>Load the data into R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
 	  <PRE>
 	    data = scan('/path/to/rmsd.mat')
 	    rmsd = matrix(data, nrow=sqrt(length(data)), ncol=sqrt(length(data)))
@@ -89,7 +89,7 @@
       <LI>Select/Deselect <B>conformations</B> to activate/deactivate individual conformations.
       <LI><B>All</B> and <B>None</B> turn on/off all the clusters and conformations.
       <LI>Activate <B>Join 1 member clusters</B> to display all single member clusters in a separate cluster (<EM>outl</EM>).
-      <LI>The <B>atom selection</B> to represent can be change in the atom selection box. Click the <EM>Update Selection</EM> button to apply the changes.
+      <LI>The <B>atom selection</B> to represent can be changed in the atom selection box. Click the <EM>Update Selection</EM> button to apply the changes.
     </UL>
 </OL>
 
