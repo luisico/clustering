@@ -35,11 +35,12 @@
       <LI><A HREF="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</A> (link doesn't work anymore).
       <LI><A HREF="http://www.schrodinger.com/">Xcluster</A>.
       <LI><A HREF="http://www.r-project.org/">R</A> hierarchical <A HREF="http://cran.r-project.org/src/contrib/Descriptions/cluster.html">clustering</A>.
+      <LI><A HREF="http://www.gromacs.org">Gromacs</A> clustering utility <A HREF="http://www.gromacs.org/documentation/reference/online/g_cluster.html">g_cluster</A>.
     </UL>
   <LI>Color conformations by cluster.
-  <LI>Selection of clusters and conformations to display.
+  <LI>Selection of clusters and/or conformations to display.
   <LI>Multiple levels of clustering.
-  <LI>Change representation.
+  <LI>Custom representation.
   <LI>Join single member clusters in a separate cluster.
 </UL>
 
@@ -53,49 +54,66 @@
 <H2><A NAME="usage">Usage</A></H2>
 
 <P>To use the <EM>Cluster plugin</EM> you need:
+
 <OL>
   <LI><B>Load a trajectory</B> of the conformations used for clustering into VMD.
   <LI>Define the <B>atom selection</B> and <B>molecule</B> to use as representation in vmd.
   <LI><B>Generate</B> the clusters with <EM>NMRCLUSTER</EM>, <EM>Xcluster</EM> or <EM>R</EM> and <B>Import</B> the results into the plugin:
   <UL>
-    <LI>For <B>NMRCLUSTER</B> import the <EM>"Cluster.log"</EM> file, only a level (0) will be availabe. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
+    <LI>For <B>NMRCLUSTER</B> import the <EM>"Cluster.log"</EM> file. Only a level (0) will be available. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
     <LI>For <B>Xcluster</B> import the <EM>".clg"</EM> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <EM>Writecls</EM> command).
     <LI>For <B>R</B> follow this procedure:
-      <OL>
-	<LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest writting the results in matrix format).
-	<LI>Load the data into R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
-	  <PRE>
-	    data = scan('/path/to/rmsd.mat')
-	    rmsd = matrix(data, nrow=sqrt(length(data)), ncol=sqrt(length(data)))
-	    library(cluster)
-	    cluster = agnes(rmsd, diss=T)
-	  </PRE>
-	<LI>Cut the tree into groups (levels) using <EM>cutree</EM>. You can cut into one or more groupings. For example
-	  <PRE>
-	    levels = cutree(cluster, k=2:5)
-	  </PRE>
-	  will output the cluster membership of each object for levels 2 to 5.
-	<LI>Write the results to a file to input into the Cluster plugin:
-	  <PRE>
-	    write.table(levels, file='levels.dat', quote=F)
-	  </PRE>
-	<LI>Import the file into the Cluster plugin.
-      </OL>
+    <OL>
+      <LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest writing the results in matrix format).
+      <LI>Load the data into R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
+      <PRE>
+        data = scan('/path/to/rmsd.mat')
+        rmsd = matrix(data, nrow=sqrt(length(data)), ncol=sqrt(length(data)))
+        library(cluster)
+        cluster = agnes(rmsd, diss=T)
+      </PRE>
+      <LI>Cut the tree into groups (levels) using <EM>cutree</EM>. You can cut into one or more groupings. For example
+      <PRE>
+        levels = cutree(cluster, k=2:5)
+      </PRE>
+      will output the cluster membership of each object for levels 2 to 5.
+      <LI>Write the results to a file to input into the Cluster plugin:
+      <PRE>
+        write.table(levels, file='levels.dat', quote=F)
+      </PRE>
+      <LI>Import the file into the Cluster plugin.
+    </OL>
+    <LI>For <B>Gromacs (g_cluster)</B> import the <EM>"cluster.log"</EM> file. Only a level (0) will be available.
   </UL>
   <LI>Managing the GUI:
-    <UL>
-      <LI>Select the <B>level</B> you want to see. The list of clusters will be updated together with the colors of the conformations. All clusters will be displayed when you change the level.
-      <LI>Select/Deselect <B>clusters</B> to activate/deactivate them.
-      <LI>Select/Deselect <B>conformations</B> to activate/deactivate individual conformations.
-      <LI><B>All</B> and <B>None</B> turn on/off all the clusters and conformations.
-      <LI>Activate <B>Join 1 member clusters</B> to display all single member clusters in a separate cluster (<EM>outl</EM>).
-      <LI>The <B>atom selection</B> to represent can be changed in the atom selection box. Click the <EM>Update Selection</EM> button to apply the changes.
-    </UL>
+  <UL>
+    <LI>Select the <B>level</B> you want to see. The list of clusters will be updated together with the colors of the conformations. All clusters will be displayed when you change the level.
+    <LI>Select/Deselect <B>clusters</B> to activate/deactivate them.
+    <LI>Select/Deselect <B>conformations</B> to activate/deactivate individual conformations.
+    <LI><B>All</B> and <B>None</B> turn on/off all the clusters and conformations.
+    <LI>Activate <B>Join 1 member clusters</B> to display all single member clusters in a separate cluster (<EM>outl</EM>).
+    <LI>The <B>atom selection</B> to represent can be changed in the atom selection box. Click the <EM>Update Selection</EM> button to apply the changes.
+  </UL>
 </OL>
 
 <H2><A NAME="download">Download</A></H2>
 
 Send a mail to the <A HREF="#author">author</A> if you would like to be informed about new updates of this plugin.
+
+<TABLE WIDTH=650 CLASS="plugin">
+  <TR>
+    <TD CLASS="vertit"><B><A NAME="Cluster_last">1.7</A> (6 Feb'08)</B></TD>
+      <TD CLASS="verdown">[<A HREF="versions/cluster-v1.7.tgz">download</A>]</TD>
+  </TR><TR>
+  </TR><TR>
+    <TD CLASS="verlog" COLSPAN=2>Change log:
+  <UL>
+    <LI>Add support for cluster output from Gromacs utility g_cluster.
+    <LI>Fix colors when doing multiple imports.
+    <LI>Fix display of the 'outl' cluster.
+  </UL></TD>
+  </TR>
+</TABLE>
 
 <TABLE WIDTH=650 CLASS="plugin">
   <TR>
@@ -106,7 +124,7 @@ Send a mail to the <A HREF="#author">author</A> if you would like to be informed
     <TD CLASS="verlog" COLSPAN=2>Change log:
   <UL>
     <LI>Added support for cluster output from R.
-    <LI>Join 1 member clusters works interactively (not just on import).
+    <LI>'Join 1 member' clusters works interactively (not just on import).
     <LI>Upgraded number of colors to the vmd maximum.
   </UL></TD>
   </TR>
@@ -206,12 +224,12 @@ if { [catch "package require clustering" msg] } {
 
 </TD></TR>
 
-<TR><TD CLASS="footer">Copyright &copy; 2004-2007, Weill Medical College of Cornell University. All Rights Reserved</TD></TR>
+<TR><TD CLASS="footer">Copyright &copy; 2004-2008, Weill Cornell Medical College. All Rights Reserved</TD></TR>
 
 <TR><TD CLASS="address">
 <ADDRESS>
 <A HREF="mailto:lug2002@med.cornell.edu">Luis Gracia</A>
-| last updated: Monday, August 13, 2007
+| last updated: Tuesday, February 6, 2008
 <!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
 </ADDRESS>
 </TD></TR>

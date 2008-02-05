@@ -1,5 +1,5 @@
 #
-#              Clustering Tool v1.6
+#              Clustering Tool v1.7
 #
 # A clustering tool to represent clusters in VMD.
 #
@@ -7,9 +7,15 @@
 
 # Author
 # ------
-#      Luis Gracia, PhD
-#      Weill Medical College, Cornel University, NY
-#      lug2002@med.cornell.edu
+#   Luis Gracia, PhD
+#
+#      Scientific Software Specialist
+#      Department of Physiology & Biophysics
+#      Weill Cornell Medical College 
+#      1300 York Avenue, Rm LC-501F
+#      New York, NY 10065
+#
+#   lug2002@med.cornell.edu
 
 # Documentation
 # -------------
@@ -24,9 +30,9 @@
 #   - add a dimension to array cluster.
 #   - change in molecule, switches to the cluster.
 #   - delete data of a molecule if a molecule no longer exists.
+# - better parse on import to remove extra blanks
 
-
-package provide clustering 1.6
+package provide clustering 1.7
 
 namespace eval ::clustering:: {
   namespace export clustering
@@ -85,9 +91,10 @@ proc clustering::cluster {} {
   menubutton $w.top.menubar.import -text "Import" -underline 0 -menu $w.top.menubar.import.menu
   pack $w.top.menubar.import -side left
   menu $w.top.menubar.import.menu -tearoff no
-  $w.top.menubar.import.menu add command -label "NMRcluster..."  -command "[namespace current]::import nmrcluster"
-  $w.top.menubar.import.menu add command -label "Xcluster..."    -command "[namespace current]::import xcluster"
-  $w.top.menubar.import.menu add command -label "Cutree (R)..."    -command "[namespace current]::import cutree"
+  $w.top.menubar.import.menu add command -label "NMRcluster..."          -command "[namespace current]::import nmrcluster"
+  $w.top.menubar.import.menu add command -label "Xcluster..."            -command "[namespace current]::import xcluster"
+  $w.top.menubar.import.menu add command -label "Cutree (R)..."          -command "[namespace current]::import cutree"
+  $w.top.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
 
   # Menubar / Help menu
   menubutton $w.top.menubar.help -text "Help" -menu $w.top.menubar.help.menu
@@ -207,7 +214,9 @@ proc clustering::UpdateLevels {} {
   # Reset
   $clust_list delete 0 end
   $conf_list delete 0 end
-  array unset colors
+  if {[info exists colors]} {
+    unset colors
+  }
   set color -1
   [namespace current]::del_reps $clust_mol
 
@@ -288,10 +297,10 @@ proc clustering::UpdateConfs {} {
   variable cluster0
   variable clust_list
 
-  # Create reverse list
+  # Create reverse list of clusters beloging to confs
   for {set c 0} {$c < [array size cluster0]} {incr c 1} {
-   set name [$clust_list get $c]
-   foreach f $cluster0($name) {
+    set name [$clust_list get $c]
+    foreach f $cluster0($name) {
       set confs($f) $c
     }
   }
@@ -503,7 +512,11 @@ proc clustering::join_1members {} {
   foreach name [array names cluster0] {
     #puts "$name - $cluster0($name)"
     if {[llength $cluster0($name)] == 1} {
-      lappend cluster0(outl) $cluster0($name)
+      if [info exists cluster0(outl)] {
+	set cluster0(outl) [concat $cluster0(outl) $cluster0($name)]
+      } else {
+	set cluster0(outl) $cluster0($name)
+      }
       unset cluster0($name)
     }
   }
@@ -577,7 +590,7 @@ proc clustering::import_xcluster {fileid} {
     } elseif { [ regexp {^Clustering ([0-9]+); threshold distance ([0-9.]+); ([0-9]+) cluster} $line dummy level threshold ncluster ] } {
       #puts "DEBUG: clustering $level $threshold $ncluster"
       $level_list insert end $level
-    } elseif { [ regexp {^Cluster +([0-9]+); Leading member= +([0-9]+); +([0-9]+) members, sep_rat +([0-9.]+)} $line dummy num clust_leader clust_size clust_sep] } {
+    } elseif { [ regexp {^Cluster +([0-9]+); Leading member= +([0-9]+); +([0-9]+) members, sep_rat +([0-9.]+)} $line dummy num clust_leader clust_size clust_sep ] } {
       #puts "DEBUG: cluster $num $clust_leader $clust_size $clust_sep"
     } elseif { [ regexp {^([ 0-9]+)$} $line dummy dataline ] } {
       append cluster($level:$num) $dataline
@@ -624,6 +637,39 @@ proc clustering::import_cutree {fileid} {
       }
     }
   }
+  $level_list selection set 0
+  
+  [namespace current]::UpdateLevels
+}
+
+# Output from g_cluster (http://www.gromacs.org/documentation/reference/online/g_cluster.html)
+proc clustering::import_gcluster {fileid} {
+  variable level_list
+  variable cluster
+
+  # Read data
+  while {![eof $fileid]} {
+    gets $fileid line
+    if { [regexp {^cl\. \|} $line dummy] } {
+      #puts "DEBUG: start to read"
+    } elseif { [regexp {^\s*(\d+)\s+\|\s+(\d+)\s+([\d.]+)\s+\|\s+(\d+)\s+([\d.]+)\s+\|([\s\d]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
+      # start a new cluster
+      puts "DEBUG: cluster $num size $size middle $middle"
+      puts "DEBUG:    -> $members"
+      set cluster(0:$num) $members
+    } elseif { [regexp {^\s*(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|([\s\d]+)} $line dummy num size middle members ] } {
+      # start a new cluster with only one conf
+      puts "DEBUG: cluster $num size $size middle $middle"
+      puts "DEBUG:    -> $members"
+      set cluster(0:$num) $members
+    } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d]+)} $line dummy members] } {
+      # add conformations to a cluster
+      puts "DEBUG:    -> $members"
+      append cluster(0:$num) $members
+    } else {
+    }
+  }
+  $level_list insert end 0
   $level_list selection set 0
   
   [namespace current]::UpdateLevels
