@@ -237,21 +237,33 @@ proc clustering::UpdateLevels {} {
   set names [lsort -dictionary [array names cluster0]]
   #puts "DEBUG: nclusters= $nclusters; names $names"
 
-  # Populate conformations and add representations
+  # Find number of conformations
+  set nconfs 0
+  foreach key [array names cluster0] {
+    set nconfs [expr {$nconfs + [llength $cluster0($key)]}]
+  }
+  #puts "DEBUG: nconfs $nconfs"
+  
+  # Populate list of conformations
+  for {set i 1} {$i <= $nconfs} {incr i} {
+    $conf_list insert end $i
+  }
+
+  # Populate list of clusters and add representations
   for {set i 1} {$i <= $nclusters} {incr i} {
-    regsub "$level:" [lindex $names [expr $i-1]] {} name
+    regsub "$level:" [lindex $names [expr {$i-1}]] {} name
     [namespace current]::populate $i $name
     [namespace current]::add_rep $i $name
   }
 
-  $clust_list selection set 0 [expr $nclusters-1]
+  $clust_list selection set 0 [expr {$nclusters-1}]
   $conf_list selection set 0 end
-  if {[$clust_list get [expr $nclusters-1]] == "outl"} {
-    [namespace current]::clus_onoff 0 [expr $nclusters-1]
+  if {[$clust_list get [expr {$nclusters-1}]] == "outl"} {
+    [namespace current]::clus_onoff 0 [expr {$nclusters-1}]
   }
 }
 
-# Populate cluster and conformation listboxes
+# Populate cluster listbox
 proc clustering::populate {num name} {
   variable clust_list
   variable conf_list
@@ -261,18 +273,13 @@ proc clustering::populate {num name} {
 
   # Choose color
   set col [[namespace current]::next_color]
+  set rgb [index2rgb $col]
 
-  # Add conformations
+  # Add clusters to list and change conformation color
   $clust_list insert end $name
-  $clust_list itemconfigure [expr $num-1] -selectbackground [index2rgb $col]
-  foreach this $cluster0($name) {
-    set size [$conf_list size]
-    if {$size < $this} {
-      for {set k $size} {$k < $this} {incr k 1} {
-	$conf_list insert end [expr $k+1]
-      }
-    }
-    $conf_list itemconfigure [expr $this-1] -selectbackground [index2rgb $col]
+  $clust_list itemconfigure [expr {$num-1}] -selectbackground $rgb
+  foreach conf $cluster0($name) {
+    $conf_list itemconfigure [expr {$conf-1}] -selectbackground $rgb
   }
 }
 
@@ -308,7 +315,7 @@ proc clustering::UpdateConfs {} {
   # Create list of selected confs
   for {set i 0} {$i < [$conf_list size]} {incr i} {
     if {[$conf_list selection includes $i]} {
-      lappend on [expr $i+1]
+      lappend on [expr {$i+1}]
     }
   }
   
@@ -321,7 +328,7 @@ proc clustering::UpdateConfs {} {
     return
   }
   foreach f $on {
-    lappend frames($confs($f)) [expr $f-1]
+    lappend frames($confs($f)) [expr {$f-1}]
   }
 
   # apply changes
@@ -385,15 +392,15 @@ proc clustering::add_rep {num name} {
   variable colors
 
   foreach f $cluster0($name) {
-    lappend frames [expr $f-1]
+    lappend frames [expr {$f-1}]
   }
 
   mol rep lines
   mol selection [[namespace current]::set_sel]
   mol addrep $clust_mol
-  mol drawframes $clust_mol [expr $num-1] $frames
-  set col [lindex $colors [expr $num-1]]
-  mol modcolor [expr $num-1] $clust_mol ColorID $col
+  mol drawframes $clust_mol [expr {$num-1}] $frames
+  set col [lindex $colors [expr {$num-1}]]
+  mol modcolor [expr {$num-1}] $clust_mol ColorID $col
 }
 
 # Delete all reps
@@ -434,13 +441,13 @@ proc clustering::clus_onoff {state clus} {
 
   if { $state == 0 } {
     foreach f $this {
-      $conf_list selection clear [expr $f-1]
+      $conf_list selection clear [expr {$f-1}]
     }
     mol showrep $clust_mol $clus off
   } else {
     foreach f $this {
-      $conf_list selection set [expr $f-1]
-      lappend frames [expr $f-1]
+      $conf_list selection set [expr {$f-1}]
+      lappend frames [expr {$f-1}]
     }
     mol drawframes $clust_mol $clus $frames
     mol showrep $clust_mol $clus on
@@ -489,9 +496,9 @@ proc clustering::next_color {} {
 proc clustering::index2rgb {i} {
   set len 2
   lassign [colorinfo rgb $i] r g b
-  set r [expr int($r*255)]
-  set g [expr int($g*255)]
-  set b [expr int($b*255)]
+  set r [expr {int($r*255)}]
+  set g [expr {int($g*255)}]
+  set b [expr {int($b*255)}]
   #puts "$i      $r $g $b"
   return [format "#%.${len}X%.${len}X%.${len}X" $r $g $b]
 }
@@ -652,25 +659,44 @@ proc clustering::import_gcluster {fileid} {
     gets $fileid line
     if { [regexp {^cl\. \|} $line dummy] } {
       #puts "DEBUG: start to read"
-    } elseif { [regexp {^\s*(\d+)\s+\|\s+(\d+)\s+([\d.]+)\s+\|\s+(\d+)\s+([\d.]+)\s+\|([\s\d]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
+    } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|([\s\d.e-]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
       # start a new cluster
       puts "DEBUG: cluster $num size $size middle $middle"
       puts "DEBUG:    -> $members"
       set cluster(0:$num) $members
-    } elseif { [regexp {^\s*(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|([\s\d]+)} $line dummy num size middle members ] } {
+      append times $members
+    } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+\|\s+([\d.e-]+)\s+\|([\s\d.e-]+)} $line dummy num size middle members ] } {
       # start a new cluster with only one conf
       puts "DEBUG: cluster $num size $size middle $middle"
       puts "DEBUG:    -> $members"
       set cluster(0:$num) $members
-    } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d]+)} $line dummy members] } {
+      append times $members
+    } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d.e-]+)} $line dummy members] } {
       # add conformations to a cluster
       puts "DEBUG:    -> $members"
       append cluster(0:$num) $members
+      append times $members
     } else {
     }
   }
+
+  # Convert time into steps
+  set sorted [lsort -real $times]
+  for {set i 0} {$i < [llength $sorted]} {incr i} {
+    set corr([lindex $sorted $i]) $i
+  }
+  foreach key [array names cluster] {
+    if {[info exists temp2]} {
+      unset temp2
+    }
+    foreach el $cluster($key) {
+      lappend temp2 [expr {$corr($el) +1}]
+    }
+    set cluster($key) $temp2
+  }
+
   $level_list insert end 0
   $level_list selection set 0
-  
+
   [namespace current]::UpdateLevels
 }
