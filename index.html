@@ -35,7 +35,7 @@
       <LI><A HREF="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</A> (link doesn't work anymore).
       <LI><A HREF="http://www.schrodinger.com/">Xcluster</A>.
       <LI><A HREF="http://www.r-project.org/">R</A> hierarchical <A HREF="http://cran.r-project.org/src/contrib/Descriptions/cluster.html">clustering</A>.
-      <!-- <LI><A HREF="http://www.gromacs.org">Gromacs</A> clustering utility <A HREF="http://www.gromacs.org/documentation/reference/online/g_cluster.html">g_cluster</A>.-->
+      <LI><A HREF="http://www.gromacs.org">Gromacs</A> clustering utility <A HREF="http://www.gromacs.org/documentation/reference/online/g_cluster.html">g_cluster</A>.
     </UL>
   <LI>Color conformations by cluster.
   <LI>Selection of clusters and/or conformations to display.
@@ -58,11 +58,11 @@
 <OL>
   <LI><B>Load a trajectory</B> of the conformations used for clustering into VMD.
   <LI>Define the <B>atom selection</B> and <B>molecule</B> to use as representation in vmd.
-  <LI><B>Generate</B> the clusters with <EM>NMRCLUSTER</EM>, <EM>Xcluster</EM> or <EM>R</EM> and <B>Import</B> the results into the plugin:
+  <LI><B>Generate</B> the clusters with one of the following external utilities and <B>Import</B> the results into the plugin:
   <UL>
-    <LI>For <B>NMRCLUSTER</B> import the <EM>"Cluster.log"</EM> file. Only a level (0) will be available. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
-    <LI>For <B>Xcluster</B> import the <EM>".clg"</EM> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <EM>Writecls</EM> command).
-    <LI>For <B>R</B> follow this procedure:
+    <LI><B>NMRCLUSTER</B>: import the <EM>"Cluster.log"</EM> file. Only a level (0) will be available. Outliers will be splitted in different clusters. Use the <EM>Join 1 member clusters</EM> to cluster them together.
+    <LI><B>Xcluster</B>: import the <EM>".clg"</EM> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <EM>Writecls</EM> command).
+    <LI><B>R</B>:
     <OL>
       <LI>Obtain the rmsd between structures. You can use the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin for and easy way of doing this (I suggest writing the results in matrix format).
       <LI>Load the data into R and use one of the available functions in R to do hierarchical clustering (<EM>hclust</EM>, <EM>agnes</EM>, <EM>diana</EM>, ...). If you used the <A HREF="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp">iTrajComp</A> plugin to create the rmsd matrix, the following should work in R (see the documentation of the individual commands for further options):
@@ -83,7 +83,7 @@
       </PRE>
       <LI>Import the file into the Cluster plugin.
     </OL>
-    <!--<LI>For <B>Gromacs (g_cluster)</B> import the <EM>"cluster.log"</EM> file. Only a level (0) will be available.-->
+    <LI><B>Gromacs (g_cluster)</B>: import the <EM>"cluster.log"</EM> file. Only a level (0) will be available. <EM>g_cluster</EM> timesteps are automatically mapped into VMD frames. <EM>Thanks to Andrea Carotti for all his help with the testing</EM>.
   </UL>
   <LI>Managing the GUI:
   <UL>
@@ -99,10 +99,9 @@
 <H2><A NAME="download">Download</A></H2>
 
 Send a mail to the <A HREF="#author">author</A> if you would like to be informed about new updates of this plugin.
-<!--
 <TABLE WIDTH=650 CLASS="plugin">
   <TR>
-    <TD CLASS="vertit"><B><A NAME="Cluster_last">1.7</A> (6 Feb'08)</B></TD>
+    <TD CLASS="vertit"><B><A NAME="Cluster_last">1.7</A> (26 Feb'08)</B></TD>
     <TD CLASS="verdown">[<A HREF="versions/cluster-v1.7.tgz">download</A>]</TD>
   </TR><TR>
   </TR><TR>
@@ -115,7 +114,6 @@ Send a mail to the <A HREF="#author">author</A> if you would like to be informed
     </TD>
   </TR>
 </TABLE>
--->
 <TABLE WIDTH=650 CLASS="plugin">
   <TR>
     <TD CLASS="vertit"><B><A NAME="Cluster_last">1.6</A> (13 Aug'07)</B></TD>
@@ -235,7 +233,7 @@ if { [catch "package require clustering" msg] } {
 <TR><TD CLASS="address">
 <ADDRESS>
 <A HREF="mailto:lug2002@med.cornell.edu">Luis Gracia</A>
-| last updated: Tuesday, February 5 2008
+| last updated: Tuesday, February 26 2008
 <!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
 </ADDRESS>
 </TD></TR>
