@@ -25,7 +25,6 @@
 ## $Id$
 
 # ToDo:
-# - add link to the help file.
 # - control clusters of different molecules:
 #   - add a dimension to array cluster.
 #   - change in molecule, switches to the cluster.
@@ -56,6 +55,7 @@ proc clustering::destroy {} {
 proc clustering::cluster {} {
   variable w;   # TK window
 
+  variable webpage "http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster"
   variable cluster;   # Array with all levels clustering (set on import)
   variable cluster0;   # Array with current selected level
   variable clust_file;   # File used to load clustering data
@@ -71,13 +71,13 @@ proc clustering::cluster {} {
   }
 
   # If already initialized, just turn on
-  if { [winfo exists .cluster] } {
+  if { [winfo exists .clustering] } {
     wm deiconify $w
     return
   }
 
   # Create the window
-  set w [toplevel ".cluster"]
+  set w [toplevel ".clustering"]
   wm title $w "Clustering Tool"
   wm resizable $w 1 1
   bind $w <Destroy> [namespace current]::destroy
@@ -100,7 +100,7 @@ proc clustering::cluster {} {
   menubutton $w.top.menubar.help -text "Help" -menu $w.top.menubar.help.menu
   pack $w.top.menubar.help -side right
   menu $w.top.menubar.help.menu -tearoff no
-  $w.top.menubar.help.menu add command -label "Help" -command "vmd_open_url page.html"
+  $w.top.menubar.help.menu add command -label "Help" -command "vmd_open_url $webpage"
   $w.top.menubar.help.menu add command -label "About" -command [namespace current]::about
   
   pack $w.top -fill x
@@ -529,10 +529,16 @@ proc clustering::join_1members {} {
   }
 }
 
-proc clustering::about {} {
-    set vn [package present luis]
-    tk_messageBox -title "About Clustering $vn" -message \
-"Clustering version $vn
+proc clustering::about { {parent .clustering} } {
+  variable webpage
+  set vn [package present clustering]
+  tk_messageBox -title "About Clustering v$vn" -parent $parent -message \
+"Clustering v$vn
+
+Cluster is a VMD plugin to visualize clusters of conformations of a structure.
+
+More information at:
+$webpage
 
 Copyright (C) Luis Gracia <lug2002@med.cornell.edu> 
 
