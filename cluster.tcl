@@ -661,19 +661,19 @@ proc clustering::import_gcluster {fileid} {
       #puts "DEBUG: start to read"
     } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|([\s\d.e-]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
       # start a new cluster
-      puts "DEBUG: cluster $num size $size middle $middle"
-      puts "DEBUG:    -> $members"
+      #puts "DEBUG: cluster $num size $size middle $middle"
+      #puts "DEBUG:    -> $members"
       set cluster(0:$num) $members
       append times $members
     } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+\|\s+([\d.e-]+)\s+\|([\s\d.e-]+)} $line dummy num size middle members ] } {
       # start a new cluster with only one conf
-      puts "DEBUG: cluster $num size $size middle $middle"
-      puts "DEBUG:    -> $members"
+      #puts "DEBUG: cluster $num size $size middle $middle"
+      #puts "DEBUG:    -> $members"
       set cluster(0:$num) $members
       append times $members
     } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d.e-]+)} $line dummy members] } {
       # add conformations to a cluster
-      puts "DEBUG:    -> $members"
+      #puts "DEBUG:    -> $members"
       append cluster(0:$num) $members
       append times $members
     } else {
