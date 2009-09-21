@@ -95,6 +95,7 @@ proc clustering::cluster {} {
   $w.top.menubar.import.menu add command -label "Xcluster..."            -command "[namespace current]::import xcluster"
   $w.top.menubar.import.menu add command -label "Cutree (R)..."          -command "[namespace current]::import cutree"
   $w.top.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
+  $w.top.menubar.import.menu add command -label "Charmm..." -command "[namespace current]::import charmm"
 
   # Menubar / Help menu
   menubutton $w.top.menubar.help -text "Help" -menu $w.top.menubar.help.menu
@@ -555,7 +556,7 @@ proc clustering::import {type} {
   variable level_list
 
   set clust_file [tk_getOpenFile -title "Cluster filename" -filetypes [list {"Cluster files" {.out .log .dat .clg}} {"All Files" *}] ]
-    
+
   if {[file readable $clust_file]} {
     set fileid [open $clust_file "r"]
     if {[array exists cluster]} {unset cluster}
@@ -699,6 +700,27 @@ proc clustering::import_gcluster {fileid} {
       lappend temp2 [expr {$corr($el) +1}]
     }
     set cluster($key) $temp2
+  }
+
+  $level_list insert end 0
+  $level_list selection set 0
+
+  [namespace current]::UpdateLevels
+}
+
+# Output from charmm
+proc clustering::import_charmm {fileid} {
+  variable level_list
+  variable cluster
+
+  # Read data
+  while {![eof $fileid]} {
+    gets $fileid line
+    #puts "DEBUG: $line"
+    if { [ regexp {^\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.eE+-]+)} $line dummy num member series distance ] } {
+      #puts "DEBUG: $num -> $member -> $series -> $distance"
+      lappend cluster(0:$num) $member
+    }
   }
 
   $level_list insert end 0
