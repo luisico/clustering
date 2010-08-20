@@ -31,7 +31,7 @@
 #   - delete data of a molecule if a molecule no longer exists.
 # - better parse on import to remove extra blanks
 
-package provide clustering 1.7
+package provide clustering 2.0
 
 namespace eval ::clustering:: {
   namespace export clustering
@@ -56,14 +56,23 @@ proc clustering::cluster {} {
   variable w;   # TK window
 
   variable webpage "http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster"
-  variable cluster;   # Array with all levels clustering (set on import)
-  variable cluster0;   # Array with current selected level
-  variable clust_file;   # File used to load clustering data
-  variable clust_mol;   # Molecule use to show clustering
-  variable clust_list;   # Listbox with clusters for selected level
-  variable level_list;   # Listbox with available clustering levels
-  variable conf_list;   # Listbox with conformations for a level
-  variable join_1members;   # Join single member clusters in a separate cluster
+  variable cluster;          # Array with all levels clustering (set on import)
+  variable cluster0;         # Array with current selected level
+  variable clust_file;       # File used to load clustering data
+  variable clust_mol;        # Molecule use to show clustering
+  variable clust_list;       # Listbox with clusters for selected level
+  variable level_list;       # Listbox with available clustering levels
+  variable conf_list;        # Listbox with conformations for a level
+  variable join_1members  1; # Join single member clusters in a separate cluster
+  variable bb_def  "C CA N"; # Backbone definition (diferent from VMD's definition)
+  variable bb_only        0; # Selection modifier (only name CA C N)
+  variable trace_only     0; # Selection modifier (only name CA)
+  variable noh            1; # Selection modifier (no hydrogens)
+  variable calc_nclusters 5; # Calculation options (number of clusters)
+  variable calc_cutoff  1.0; # Calculation options (cutoff)
+  variable calc_first     0; # Calculation options (first frame)
+  variable calc_last     -1; # Calculation options (last frame)
+  variable calc_step      1; # Calculation options (frame step)
   global vmd_initialize_structure
 
   if {[molinfo num] > 0} {
@@ -76,35 +85,121 @@ proc clustering::cluster {} {
     return
   }
 
-  # Create the window
+   # GUI look
+  option add *clustering.*borderWidth 1
+  option add *clustering.*Button.padY 0
+  option add *clustering.*Menubutton.padY 0
+
+  # Main window
   set w [toplevel ".clustering"]
   wm title $w "Clustering Tool"
   wm resizable $w 1 1
   bind $w <Destroy> [namespace current]::destroy
 
-  # Menubar
-  frame $w.top
-  frame $w.top.menubar -relief raised -bd 2
-  pack $w.top.menubar -padx 1 -fill x -side top
+  # Menu
+  frame $w.menubar -relief raised -bd 2
+  pack $w.menubar -fill x
 
-  # Menubar / Import menu
-  menubutton $w.top.menubar.import -text "Import" -underline 0 -menu $w.top.menubar.import.menu
-  pack $w.top.menubar.import -side left
-  menu $w.top.menubar.import.menu -tearoff no
-  $w.top.menubar.import.menu add command -label "NMRcluster..."          -command "[namespace current]::import nmrcluster"
-  $w.top.menubar.import.menu add command -label "Xcluster..."            -command "[namespace current]::import xcluster"
-  $w.top.menubar.import.menu add command -label "Cutree (R)..."          -command "[namespace current]::import cutree"
-  $w.top.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
-  $w.top.menubar.import.menu add command -label "Charmm..." -command "[namespace current]::import charmm"
+  # Import menu
+  menubutton $w.menubar.import -text "Import" -underline 0 -menu $w.menubar.import.menu
+  pack $w.menubar.import -side left
+  menu $w.menubar.import.menu -tearoff no
+  $w.menubar.import.menu add command -label "NMRcluster..."          -command "[namespace current]::import nmrcluster"
+  $w.menubar.import.menu add command -label "Xcluster..."            -command "[namespace current]::import xcluster"
+  $w.menubar.import.menu add command -label "Cutree (R)..."          -command "[namespace current]::import cutree"
+  $w.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
+  $w.menubar.import.menu add command -label "Charmm..." -command "[namespace current]::import charmm"
 
   # Menubar / Help menu
-  menubutton $w.top.menubar.help -text "Help" -menu $w.top.menubar.help.menu
-  pack $w.top.menubar.help -side right
-  menu $w.top.menubar.help.menu -tearoff no
-  $w.top.menubar.help.menu add command -label "Help" -command "vmd_open_url $webpage"
-  $w.top.menubar.help.menu add command -label "About" -command [namespace current]::about
+  menubutton $w.menubar.help -text "Help" -menu $w.menubar.help.menu
+  pack $w.menubar.help -side right
+  menu $w.menubar.help.menu -tearoff no
+  $w.menubar.help.menu add command -label "Help" -command "vmd_open_url $webpage"
+  $w.menubar.help.menu add command -label "About" -command [namespace current]::about
   
-  pack $w.top -fill x
+
+  # Selection frame
+  frame $w.sel -relief ridge
+  pack $w.sel -side top -fill x
+
+  # Selection
+  frame $w.sel.left
+  pack $w.sel.left -side left -fill both -expand yes
+  
+  text $w.sel.left.sel -height 3 -width 25 -highlightthickness 0 -selectborderwidth 0 -exportselection yes -wrap word -relief sunken -bd 1
+  pack $w.sel.left.sel -side top -fill both -expand yes
+  $w.sel.left.sel insert end "protein"
+
+  # Selections options
+  frame $w.sel.right
+  pack $w.sel.right -side right
+
+  checkbutton $w.sel.right.bb -text "Backbone" -variable [namespace current]::bb_only -command "[namespace current]::ctrlbb bb"
+  checkbutton $w.sel.right.tr -text "Trace" -variable [namespace current]::trace_only -command "[namespace current]::ctrlbb trace"
+  checkbutton $w.sel.right.noh -text "noh" -variable [namespace current]::noh -command "[namespace current]::ctrlbb noh"
+  pack $w.sel.right.bb $w.sel.right.tr $w.sel.right.noh -side top -anchor nw
+
+  # Calculate
+  frame $w.calc
+  pack $w.calc -side top -fill x -anchor nw
+
+  frame $w.calc.buttons
+  pack $w.calc.buttons -side left -anchor nw
+
+  button $w.calc.buttons.cluster -text "Cluster" -command [namespace code calculate]
+  pack $w.calc.buttons.cluster -side top -anchor nw
+
+  button $w.calc.buttons.update -text "Views" -command [namespace code UpdateSel]
+  pack $w.calc.buttons.update -side top -anchor nw
+
+  frame $w.calc.options
+  pack $w.calc.options -side left -anchor nw
+
+  frame $w.calc.options.1
+  pack $w.calc.options.1 -side top -anchor nw
+
+  frame $w.calc.options.1.mol
+  pack $w.calc.options.1.mol -side left -anchor nw
+
+  label $w.calc.options.1.mol.label -text "Mol:"
+  menubutton $w.calc.options.1.mol.value -relief raised -bd 2 -direction flush \
+    -textvariable [namespace current]::clust_mol -menu $w.calc.options.1.mol.value.menu
+  menu $w.calc.options.1.mol.value.menu
+  pack  $w.calc.options.1.mol.label $w.calc.options.1.mol.value -side left
+
+  frame $w.calc.options.1.ncluster
+  pack $w.calc.options.1.ncluster -side left -anchor nw
+  label $w.calc.options.1.ncluster.label -text "N clusters:"
+  entry $w.calc.options.1.ncluster.value -width 3 -textvariable [namespace current]::calc_nclusters
+  pack $w.calc.options.1.ncluster.label $w.calc.options.1.ncluster.value -side left -anchor nw
+
+  frame $w.calc.options.1.cutoff
+  pack $w.calc.options.1.cutoff -side left -anchor nw
+  label $w.calc.options.1.cutoff.label -text "Cutoff:"
+  entry $w.calc.options.1.cutoff.value -width 5 -textvariable [namespace current]::calc_cutoff
+  pack $w.calc.options.1.cutoff.label $w.calc.options.1.cutoff.value -side left -anchor nw
+
+  frame $w.calc.options.2
+  pack $w.calc.options.2 -side top -anchor nw
+
+  frame $w.calc.options.2.first
+  pack $w.calc.options.2.first -side left -anchor nw
+  label $w.calc.options.2.first.label -text "First:"
+  entry $w.calc.options.2.first.value -width 4 -textvariable [namespace current]::calc_first
+  pack $w.calc.options.2.first.label $w.calc.options.2.first.value -side left -anchor nw
+
+  frame $w.calc.options.2.last
+  pack $w.calc.options.2.last -side left -anchor nw
+  label $w.calc.options.2.last.label -text "Last:"
+  entry $w.calc.options.2.last.value -width 4 -textvariable [namespace current]::calc_last
+  pack $w.calc.options.2.last.label $w.calc.options.2.last.value -side left -anchor nw
+
+  frame $w.calc.options.2.step
+  pack $w.calc.options.2.step -side left -anchor nw
+  label $w.calc.options.2.step.label -text "Step:"
+  entry $w.calc.options.2.step.value -width 4 -textvariable [namespace current]::calc_step
+  pack $w.calc.options.2.step.label $w.calc.options.2.step.value -side left -anchor nw
+
 
   # Data
   frame $w.data -relief ridge -bd 2
@@ -154,42 +249,23 @@ proc clustering::cluster {} {
 
   # Options
   frame $w.options -relief ridge -bd 2
+  pack $w.options -fill y -anchor nw
 
   # Options / join 1 member clusters
   frame $w.options.join
   checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable clustering::join_1members -command [namespace code UpdateLevels]
   pack $w.options.join.cb -side top -anchor nw
   pack $w.options.join -side top -anchor nw
-  set join_1members 1
 
-  # Options / atoms selection
-  frame $w.options.sel
-  button $w.options.sel.apply -text "Update\nSelection" -command [namespace code UpdateSel]
-  pack $w.options.sel.apply -side left -anchor nw
-  text $w.options.sel.text -selectborderwidth 0 -exportselection yes -height 3 -width 25 -wrap word
-  $w.options.sel.text insert end "noh"
-  pack $w.options.sel.text -side left -fill x -expand 1 -anchor nw
-  pack $w.options.sel -side left -fill y
-
-  pack $w.options -fill y
 
   # Status
   frame $w.status -relief raised -bd 1
+  pack $w.status -fill x
 
   label $w.status.clustfile_label -text "Cluster:"
   pack  $w.status.clustfile_label -side left
   entry $w.status.clustfile_entry -textvariable clustering::clust_file
   pack  $w.status.clustfile_entry -side left -fill x -expand 1
-
-  label $w.status.mol_label -text "Mol:"
-  pack  $w.status.mol_label -side left
-  menubutton $w.status.mol_entry -relief raised -bd 2 -direction flush \
-    -textvariable [namespace current]::clust_mol \
-	-menu $w.status.mol_entry.menu
-  menu $w.status.mol_entry.menu
-  pack  $w.status.mol_entry -side left
-
-  pack $w.status -fill x
 
   # Set up the molecule list
   trace variable vmd_initialize_structure w [namespace current]::UpdateMolecules
@@ -246,7 +322,7 @@ proc clustering::UpdateLevels {} {
   #puts "DEBUG: nconfs $nconfs"
   
   # Populate list of conformations
-  for {set i 1} {$i <= $nconfs} {incr i} {
+  for {set i 0} {$i < $nconfs} {incr i} {
     $conf_list insert end $i
   }
 
@@ -280,7 +356,7 @@ proc clustering::populate {num name} {
   $clust_list insert end $name
   $clust_list itemconfigure [expr {$num-1}] -selectbackground $rgb
   foreach conf $cluster0($name) {
-    $conf_list itemconfigure [expr {$conf-1}] -selectbackground $rgb
+    $conf_list itemconfigure $conf -selectbackground $rgb
   }
 }
 
@@ -316,7 +392,7 @@ proc clustering::UpdateConfs {} {
   # Create list of selected confs
   for {set i 0} {$i < [$conf_list size]} {incr i} {
     if {[$conf_list selection includes $i]} {
-      lappend on [expr {$i+1}]
+      lappend on $i
     }
   }
   
@@ -329,7 +405,7 @@ proc clustering::UpdateConfs {} {
     return
   }
   foreach f $on {
-    lappend frames($confs($f)) [expr {$f-1}]
+    lappend frames($confs($f)) $f
   }
 
   # apply changes
@@ -357,15 +433,14 @@ proc clustering::UpdateMolecules {args} {
   set mollist [molinfo list]
 
   # Update the molecule browser
-  $w.status.mol_entry.menu delete 0 end
-  $w.status.mol_entry configure -state disabled
+  $w.calc.options.1.mol.value.menu delete 0 end
+  $w.calc.options.1.mol.value configure -state disabled
   if { [llength $mollist] != 0 } {
     foreach id $mollist {
       if {[molinfo $id get filetype] != "graphics"} {
-        $w.status.mol_entry configure -state normal 
-        $w.status.mol_entry.menu add radiobutton -value $id \
-	  -label "$id [molinfo $id get name]" \
-	  -variable [namespace current]::clust_mol
+        $w.calc.options.1.mol.value configure -state normal 
+        $w.calc.options.1.mol.value.menu add radiobutton -value $id \
+	  -label "$id [molinfo $id get name]" -variable [namespace current]::clust_mol
       }
     }
   }
@@ -393,7 +468,7 @@ proc clustering::add_rep {num name} {
   variable colors
 
   foreach f $cluster0($name) {
-    lappend frames [expr {$f-1}]
+    lappend frames $f
   }
 
   mol rep lines
@@ -442,13 +517,13 @@ proc clustering::clus_onoff {state clus} {
 
   if { $state == 0 } {
     foreach f $this {
-      $conf_list selection clear [expr {$f-1}]
+      $conf_list selection clear $f
     }
     mol showrep $clust_mol $clus off
   } else {
     foreach f $this {
-      $conf_list selection set [expr {$f-1}]
-      lappend frames [expr {$f-1}]
+      $conf_list selection set $f
+      lappend frames $f
     }
     mol drawframes $clust_mol $clus $frames
     mol showrep $clust_mol $clus on
@@ -507,9 +582,23 @@ proc clustering::index2rgb {i} {
 # Parse selection
 proc clustering::set_sel {} {
   variable w
-  regsub -all "\#.*?\n" [$w.options.sel.text get 1.0 end] "" temp1
+  variable bb_only
+  variable trace_only
+  variable noh
+  variable bb_def
+
+  regsub -all "\#.*?\n" [$w.sel.left.sel get 1.0 end] "" temp1
   regsub -all "\n" $temp1 " " temp2
-  regsub -all " $" $temp2 "" sel
+  regsub -all " $" $temp2 "" temp3
+  if { $trace_only } {
+    append sel "($temp3) and name CA"
+  } elseif { $bb_only } {
+    append sel "($temp3) and name $bb_def"
+  } elseif { $noh} {
+    append sel "($temp3) and noh"
+  } else {
+    append sel $temp3
+  }
   return $sel
 }
 
@@ -530,6 +619,34 @@ proc clustering::join_1members {} {
   }
 }
 
+# Decrease all members of a list by 1
+proc clustering::decrease_list {data} {
+  for {set i 0} {$i < [llength $data]} {incr i} {
+    lset data $i [expr {[lindex $data $i] - 1}]
+  }
+  return $data
+}
+
+# Control selection modifiers
+proc clustering::ctrlbb { obj } {
+  variable w
+  variable bb_only
+  variable trace_only
+  variable noh
+
+  if {$obj == "bb"} {
+    set trace_only 0
+    set noh 0
+  } elseif {$obj == "trace"} {
+    set bb_only 0
+    set noh 0
+  } elseif {$obj == "noh"} {
+    set trace_only 0
+    set bb_only 0
+  }
+}
+
+# About
 proc clustering::about { {parent .clustering} } {
   variable webpage
   set vn [package present clustering]
@@ -573,15 +690,15 @@ proc clustering::import_nmrcluster {fileid} {
 
   # Read data
   set i 0
-  while {![eof $fileid]} {	
+  while {![eof $fileid]} {
     gets $fileid line
     if { [ regexp {^Members:([ 0-9]+)} $line dummy data ] } {
       incr i 1
-      set cluster(0:$i) $data
+      set cluster(0:$i) [[namespace current]::decrease_list $data]
     } elseif { [ regexp {^Outliers:([ 0-9]+)} $line dummy data ] } {
       foreach d $data {
 	incr i 1
-	set cluster(0:$i) $d
+	set cluster(0:$i) [expr {$d - 1}]
       }
     }
   }
@@ -606,9 +723,9 @@ proc clustering::import_xcluster {fileid} {
       $level_list insert end $level
     } elseif { [ regexp {^Cluster +([0-9]+); Leading member= +([0-9]+); +([0-9]+) members, sep_rat +([0-9.]+)} $line dummy num clust_leader clust_size clust_sep ] } {
       #puts "DEBUG: cluster $num $clust_leader $clust_size $clust_sep"
-    } elseif { [ regexp {^([ 0-9]+)$} $line dummy dataline ] } {
-      append cluster($level:$num) $dataline
-      #puts "DEBUG: adding level $level cluster $num data $dataline"
+    } elseif { [ regexp {^([ 0-9]+)$} $line dummy data ] } {
+      append cluster($level:$num) [[namespace current]::decrease_list $data]
+      #puts "DEBUG: adding level $level cluster $num data $data"
     }
   }
   
@@ -647,7 +764,7 @@ proc clustering::import_cutree {fileid} {
 	set level [lindex $levels $i]
 	set num [lindex $membership $i]
 	#puts "DEBUG: assign $i - $level - $num"
-	lappend cluster($level:$num) $obj
+	lappend cluster($level:$num) [expr {$obj - 1}]
       }
     }
   }
@@ -656,7 +773,7 @@ proc clustering::import_cutree {fileid} {
   [namespace current]::UpdateLevels
 }
 
-# Output from g_cluster (http://www.gromacs.org/documentation/reference/online/g_cluster.html)
+# GROMACS, output from g_cluster (http://www.gromacs.org/documentation/reference/online/g_cluster.html)
 proc clustering::import_gcluster {fileid} {
   variable level_list
   variable cluster
@@ -697,7 +814,7 @@ proc clustering::import_gcluster {fileid} {
       unset temp2
     }
     foreach el $cluster($key) {
-      lappend temp2 [expr {$corr($el) +1}]
+      lappend temp2 $corr($el)
     }
     set cluster($key) $temp2
   }
@@ -708,7 +825,7 @@ proc clustering::import_gcluster {fileid} {
   [namespace current]::UpdateLevels
 }
 
-# Output from charmm
+# CHARMM
 proc clustering::import_charmm {fileid} {
   variable level_list
   variable cluster
@@ -719,7 +836,7 @@ proc clustering::import_charmm {fileid} {
     #puts "DEBUG: $line"
     if { [ regexp {^\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.eE+-]+)} $line dummy num member series distance ] } {
       #puts "DEBUG: $num -> $member -> $series -> $distance"
-      lappend cluster(0:$num) $member
+      lappend cluster(0:$num) [expr {$member - 1}]
     }
   }
 
@@ -727,4 +844,56 @@ proc clustering::import_charmm {fileid} {
   $level_list selection set 0
 
   [namespace current]::UpdateLevels
+}
+
+
+#############################################################################
+# Calculate
+
+proc clustering::calculate {} {
+  variable cluster
+  variable level_list
+  variable clust_mol
+  variable calc_nclusters
+  variable calc_cutoff
+  variable calc_first
+  variable calc_last
+  variable calc_step
+
+  # Get selection
+  set seltext [[namespace current]::set_sel]
+  if {$seltext == ""} {
+    showMessage "Selection is empty selection!"
+    return -code return
+  }
+  set sel [atomselect $clust_mol $seltext]
+
+  # Cluster
+  set result [measure cluster $sel num $calc_nclusters cutoff $calc_cutoff first $calc_first last $calc_last step $calc_step]
+
+  set nclusters [llength $result]
+  if {$nclusters > 0} {
+    if {[array exists cluster]} {unset cluster}
+    $level_list delete 0 end
+
+    # Add cluster
+    for {set num 0} {$num < [expr {$nclusters - 1}]} {incr num} {
+      set cluster(0:$num) [lindex $result $num]
+    }
+
+    # Add outliers
+    set num [expr {$nclusters - 1}]
+    set outliers [lindex $result $num]
+    for {set i 0} {$i < [llength $outliers]} {incr i} {
+      set cluster(0:$num) [lindex $outliers $i]
+      incr num
+    }
+
+    $level_list insert end 0
+    $level_list selection set 0
+    
+    [namespace current]::UpdateLevels
+
+  }
+
 }
