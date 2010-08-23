@@ -97,6 +97,7 @@ proc clustering::cluster {} {
   bind $w <Destroy> [namespace current]::destroy
 
   # Menu
+  # -------------
   frame $w.menubar -relief raised -bd 2
   pack $w.menubar -fill x
 
@@ -117,40 +118,16 @@ proc clustering::cluster {} {
   $w.menubar.help.menu add command -label "Help" -command "vmd_open_url $webpage"
   $w.menubar.help.menu add command -label "About" -command [namespace current]::about
   
-
-  # Selection frame
-  frame $w.sel -relief ridge
-  pack $w.sel -side top -fill x
-
-  # Selection
-  frame $w.sel.left
-  pack $w.sel.left -side left -fill both -expand yes
-  
-  text $w.sel.left.sel -height 3 -width 25 -highlightthickness 0 -selectborderwidth 0 -exportselection yes -wrap word -relief sunken -bd 1
-  pack $w.sel.left.sel -side top -fill both -expand yes
-  $w.sel.left.sel insert end "protein"
-
-  # Selections options
-  frame $w.sel.right
-  pack $w.sel.right -side right
-
-  checkbutton $w.sel.right.bb -text "Backbone" -variable [namespace current]::bb_only -command "[namespace current]::ctrlbb bb"
-  checkbutton $w.sel.right.tr -text "Trace" -variable [namespace current]::trace_only -command "[namespace current]::ctrlbb trace"
-  checkbutton $w.sel.right.noh -text "noh" -variable [namespace current]::noh -command "[namespace current]::ctrlbb noh"
-  pack $w.sel.right.bb $w.sel.right.tr $w.sel.right.noh -side top -anchor nw
-
-  # Calculate
-  frame $w.calc
+  # Use measure cluster
+  # -------------
+  labelframe $w.calc -text "Use internal cluster analysis" -relief ridge -bd 2
   pack $w.calc -side top -fill x -anchor nw
 
   frame $w.calc.buttons
-  pack $w.calc.buttons -side left -anchor nw
+  pack $w.calc.buttons -side left -anchor nw -fill y -expand 1
 
-  button $w.calc.buttons.cluster -text "Cluster" -command [namespace code calculate]
-  pack $w.calc.buttons.cluster -side top -anchor nw
-
-  button $w.calc.buttons.update -text "Views" -command [namespace code UpdateSel]
-  pack $w.calc.buttons.update -side top -anchor nw
+  button $w.calc.buttons.cluster -text "Calculate" -command [namespace code calculate]
+  pack $w.calc.buttons.cluster -side top -anchor nw -fill y -expand 1
 
   frame $w.calc.options
   pack $w.calc.options -side left -anchor nw
@@ -200,72 +177,89 @@ proc clustering::cluster {} {
   entry $w.calc.options.2.step.value -width 4 -textvariable [namespace current]::calc_step
   pack $w.calc.options.2.step.label $w.calc.options.2.step.value -side left -anchor nw
 
+  # Selection frame
+  # -------------
+  labelframe $w.sel -text "Selection" -relief ridge -bd 2
+  pack $w.sel -side top -fill x
 
-  # Data
-  frame $w.data -relief ridge -bd 2
+  # Selection
+  frame $w.sel.left
+  pack $w.sel.left -side left -fill both -expand yes
+  
+  text $w.sel.left.sel -height 3 -width 25 -highlightthickness 0 -selectborderwidth 0 -exportselection yes -wrap word -relief sunken -bd 1
+  pack $w.sel.left.sel -side top -fill both -expand yes
+  $w.sel.left.sel insert end "protein"
 
-  # Data / Level
-  frame $w.data.level
-  label $w.data.level.label -text "Levels:"
-  pack  $w.data.level.label -side top
-  set level_list [listbox $w.data.level.listbox -selectmode single -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.level.scroll set}] ]
-  pack  $level_list -side left -fill both -expand 1
-  scrollbar $w.data.level.scroll -command [namespace code {$level_list yview}]
-  pack  $w.data.level.scroll -side left -fill y -expand 1
-  bind $level_list <<ListboxSelect>> [namespace code UpdateLevels]
-  pack $w.data.level -side left -fill both -expand 1
+  # Selections options
+  frame $w.sel.right
+  pack $w.sel.right -side right
 
-  # Data / cluster
-  frame $w.data.cluster
-  label $w.data.cluster.label -text "Clusters:"
-  pack  $w.data.cluster.label -side top
-  set clust_list [listbox $w.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.cluster.scroll set}] ]
-  pack  $clust_list -side left -fill both -expand 1
-  scrollbar $w.data.cluster.scroll -command [namespace code {$clust_list yview}]
-  pack  $w.data.cluster.scroll -side left -fill y -expand 1
-  bind $clust_list <<ListboxSelect>> [namespace code UpdateClusters]
-  pack $w.data.cluster -side left -fill both -expand 1
+  checkbutton $w.sel.right.bb -text "Backbone" -variable [namespace current]::bb_only -command "[namespace current]::ctrlbb bb"
+  checkbutton $w.sel.right.tr -text "Trace" -variable [namespace current]::trace_only -command "[namespace current]::ctrlbb trace"
+  checkbutton $w.sel.right.noh -text "noh" -variable [namespace current]::noh -command "[namespace current]::ctrlbb noh"
+  pack $w.sel.right.bb $w.sel.right.tr $w.sel.right.noh -side top -anchor nw
 
-  # Data / buttons
-  frame $w.data.buttons
-  button $w.data.buttons.all -text "All" -command [namespace code {clus_onoff_all 1}]
-  pack $w.data.buttons.all -side top
-  button $w.data.buttons.none -text "None" -command [namespace code {clus_onoff_all 0}]
-  pack $w.data.buttons.none -side top
-  pack $w.data.buttons -side left
-
-  # Data / confs
-  frame $w.data.confs
-  label $w.data.confs.label -text "Confs:"
-  pack  $w.data.confs.label -side top
-  set conf_list [listbox $w.data.confs.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.data.confs.scroll set}] ]
-  pack $conf_list -side left -fill both -expand 1
-  scrollbar $w.data.confs.scroll -command [namespace code {$conf_list yview}]
-  pack  $w.data.confs.scroll -side left -fill y -expand 1
-  pack $w.data.confs -side left -fill both -expand 1
-  bind $conf_list <<ListboxSelect>> [namespace code UpdateConfs]
-
-  pack $w.data -fill both -expand 1
+  # Results
+  # -------------
+  labelframe $w.result -text "Results" -relief ridge -bd 2
+  pack $w.result -side top -fill both -expand 1
 
   # Options
-  frame $w.options -relief ridge -bd 2
-  pack $w.options -fill y -anchor nw
+  frame $w.result.options
+  pack $w.result.options -side top -fill x
 
-  # Options / join 1 member clusters
-  frame $w.options.join
-  checkbutton $w.options.join.cb -text "Join 1 member clusters" -variable clustering::join_1members -command [namespace code UpdateLevels]
-  pack $w.options.join.cb -side top -anchor nw
-  pack $w.options.join -side top -anchor nw
+  button $w.result.options.update -text "Update Views" -command [namespace code UpdateSel]
+  pack $w.result.options.update -side left
 
+  checkbutton $w.result.options.join -text "Join 1 member clusters" -variable clustering::join_1members -command [namespace code UpdateLevels]
+  pack $w.result.options.join -side right
 
-  # Status
-  frame $w.status -relief raised -bd 1
-  pack $w.status -fill x
+  # Data
+  frame $w.result.data
+  pack $w.result.data -fill both -expand 1
 
-  label $w.status.clustfile_label -text "Cluster:"
-  pack  $w.status.clustfile_label -side left
-  entry $w.status.clustfile_entry -textvariable clustering::clust_file
-  pack  $w.status.clustfile_entry -side left -fill x -expand 1
+  # Data / Level
+  frame $w.result.data.level
+  label $w.result.data.level.label -text "Levels:"
+  pack  $w.result.data.level.label -side top
+  set level_list [listbox $w.result.data.level.listbox -selectmode single -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.level.scroll set}] ]
+  pack  $level_list -side left -fill both -expand 1
+  scrollbar $w.result.data.level.scroll -command [namespace code {$level_list yview}]
+  pack  $w.result.data.level.scroll -side left -fill y -expand 1
+  bind $level_list <<ListboxSelect>> [namespace code UpdateLevels]
+  pack $w.result.data.level -side left -fill both -expand 1
+
+  # Data / cluster
+  frame $w.result.data.cluster
+  pack $w.result.data.cluster -side left -fill both -expand 1
+
+  label $w.result.data.cluster.label -text "Clusters:"
+  pack  $w.result.data.cluster.label -side top
+  set clust_list [listbox $w.result.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.cluster.scroll set}] ]
+  pack  $clust_list -side left -fill both -expand 1
+  scrollbar $w.result.data.cluster.scroll -command [namespace code {$clust_list yview}]
+  pack  $w.result.data.cluster.scroll -side left -fill y -expand 1
+  bind $clust_list <<ListboxSelect>> [namespace code UpdateClusters]
+
+  # Data / buttons
+  frame $w.result.data.buttons
+  pack $w.result.data.buttons -side left
+
+  button $w.result.data.buttons.all -text "All" -command [namespace code {clus_onoff_all 1}]
+  button $w.result.data.buttons.none -text "None" -command [namespace code {clus_onoff_all 0}]
+  pack $w.result.data.buttons.all $w.result.data.buttons.none -side top
+
+  # Data / confs
+  frame $w.result.data.confs
+  pack $w.result.data.confs -side left -fill both -expand 1
+
+  label $w.result.data.confs.label -text "Confs:"
+  pack  $w.result.data.confs.label -side top
+  set conf_list [listbox $w.result.data.confs.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.confs.scroll set}] ]
+  pack $conf_list -side left -fill both -expand 1
+  scrollbar $w.result.data.confs.scroll -command [namespace code {$conf_list yview}]
+  pack  $w.result.data.confs.scroll -side left -fill y -expand 1
+  bind $conf_list <<ListboxSelect>> [namespace code UpdateConfs]
 
   # Set up the molecule list
   trace variable vmd_initialize_structure w [namespace current]::UpdateMolecules
@@ -327,10 +321,11 @@ proc clustering::UpdateLevels {} {
   }
 
   # Populate list of clusters and add representations
-  for {set i 1} {$i <= $nclusters} {incr i} {
-    regsub "$level:" [lindex $names [expr {$i-1}]] {} name
-    [namespace current]::populate $i $name
-    [namespace current]::add_rep $i $name
+  for {set num 0} {$num < $nclusters} {incr num} {
+    regsub "$level:" [lindex $names $num] {} name
+    [namespace current]::populate $num $name
+    [namespace current]::add_rep $num $name
+    
   }
 
   $clust_list selection set 0 [expr {$nclusters-1}]
@@ -354,7 +349,7 @@ proc clustering::populate {num name} {
 
   # Add clusters to list and change conformation color
   $clust_list insert end $name
-  $clust_list itemconfigure [expr {$num-1}] -selectbackground $rgb
+  $clust_list itemconfigure $num -selectbackground $rgb
   foreach conf $cluster0($name) {
     $conf_list itemconfigure $conf -selectbackground $rgb
   }
@@ -467,6 +462,11 @@ proc clustering::add_rep {num name} {
   variable clust_list
   variable colors
 
+#  puts "LGV: [llength $cluster0($name)]"
+#  if {[llength $cluster0($name)] == 0} {
+#    return
+#  }
+
   foreach f $cluster0($name) {
     lappend frames $f
   }
@@ -474,9 +474,9 @@ proc clustering::add_rep {num name} {
   mol rep lines
   mol selection [[namespace current]::set_sel]
   mol addrep $clust_mol
-  mol drawframes $clust_mol [expr {$num-1}] $frames
-  set col [lindex $colors [expr {$num-1}]]
-  mol modcolor [expr {$num-1}] $clust_mol ColorID $col
+  mol drawframes $clust_mol $num $frames
+  set col [lindex $colors $num]
+  mol modcolor $num $clust_mol ColorID $col
 }
 
 # Delete all reps
@@ -872,13 +872,16 @@ proc clustering::calculate {} {
   set result [measure cluster $sel num $calc_nclusters cutoff $calc_cutoff first $calc_first last $calc_last step $calc_step]
 
   set nclusters [llength $result]
+
   if {$nclusters > 0} {
     if {[array exists cluster]} {unset cluster}
     $level_list delete 0 end
 
     # Add cluster
     for {set num 0} {$num < [expr {$nclusters - 1}]} {incr num} {
-      set cluster(0:$num) [lindex $result $num]
+      if {[llength [lindex $result $num]] > 0} {
+        set cluster(0:$num) [lindex $result $num]
+      }
     }
 
     # Add unclustered frames
@@ -893,7 +896,5 @@ proc clustering::calculate {} {
     $level_list selection set 0
     
     [namespace current]::UpdateLevels
-
   }
-
 }
