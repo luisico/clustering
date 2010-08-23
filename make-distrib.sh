@@ -3,16 +3,15 @@
 version=$1
 echo "Packing version ${version:?}"
 
-plugin=cluster
+plugin=clustering
 dir=$plugin
 tar=$plugin-v$version.tgz
+
 files=(
 pkgIndex.tcl
-cluster.tcl
-index.html
-physbio_vmd.css
-cluster1.png
-cluster2.png
+clustering.tcl
+Makefile
+doc
 )
 
 # Create a local copy of the style sheets
@@ -21,7 +20,13 @@ mv physbio.css physbio_vmd.css
 cat ../vmd.css >> physbio_vmd.css
 chmod 644 physbio_vmd.css
 
-# Generate list of files
+# re-arrange documentation
+mkdir doc
+cp index.html cluster1.png cluster2.png physbio_vmd.css doc
+wget -q -O doc/vmdbackup.css http://physiology.med.cornell.edu/resources/physbio.css http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/vmd.css
+chmod -R ugo+rX doc
+
+# Build list of files
 for f in ${files[@]}; do
     if [ ! -r $f ]; then
 	echo "ERROR: File \"$dir/$f\" is not readable!"
@@ -30,12 +35,13 @@ for f in ${files[@]}; do
     dirfiles="$dirfiles $dir/$f"
 done
 
-# Create distribution archive
+# Compress
 cd ../
 tar zcvf $tar $dirfiles
 mv $tar $dir/versions
 chmod 644 $dir/versions/$tar
 cd $dir
 
-# Clean up
-rm physbio_vmd.css
+# Clean
+rm -f physbio_vmd.css
+rm -rf doc

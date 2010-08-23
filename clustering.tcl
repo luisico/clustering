@@ -335,7 +335,7 @@ proc clustering::UpdateLevels {} {
 
   $clust_list selection set 0 [expr {$nclusters-1}]
   $conf_list selection set 0 end
-  if {[$clust_list get [expr {$nclusters-1}]] == "outl"} {
+  if {[$clust_list get [expr {$nclusters-1}]] == "none"} {
     [namespace current]::clus_onoff 0 [expr {$nclusters-1}]
   }
 }
@@ -609,10 +609,10 @@ proc clustering::join_1members {} {
   foreach name [array names cluster0] {
     #puts "$name - $cluster0($name)"
     if {[llength $cluster0($name)] == 1} {
-      if [info exists cluster0(outl)] {
-	set cluster0(outl) [concat $cluster0(outl) $cluster0($name)]
+      if [info exists cluster0(none)] {
+	set cluster0(none) [concat $cluster0(none) $cluster0($name)]
       } else {
-	set cluster0(outl) $cluster0($name)
+	set cluster0(none) $cluster0($name)
       }
       unset cluster0($name)
     }
@@ -881,11 +881,11 @@ proc clustering::calculate {} {
       set cluster(0:$num) [lindex $result $num]
     }
 
-    # Add outliers
+    # Add unclustered frames
     set num [expr {$nclusters - 1}]
-    set outliers [lindex $result $num]
-    for {set i 0} {$i < [llength $outliers]} {incr i} {
-      set cluster(0:$num) [lindex $outliers $i]
+    set nocluster [lindex $result $num]
+    for {set i 0} {$i < [llength $nocluster]} {incr i} {
+      set cluster(0:$num) [lindex $nocluster $i]
       incr num
     }
 
