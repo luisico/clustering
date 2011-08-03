@@ -3,7 +3,7 @@
 version=$1
 echo "Packing version ${version:?}"
 
-plugin=clustering
+plugin=cluster
 dir=$plugin
 tar=$plugin-v$version.tgz
 
