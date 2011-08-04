@@ -778,29 +778,34 @@ proc clustering::import_gcluster {fileid} {
   variable level_list
   variable cluster
 
+  set start_reading 0
   # Read data
   while {![eof $fileid]} {
     gets $fileid line
     if { [regexp {^cl\. \|} $line dummy] } {
       #puts "DEBUG: start to read"
-    } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|([\s\d.e-]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
-      # start a new cluster
-      #puts "DEBUG: cluster $num size $size middle $middle"
-      #puts "DEBUG:    -> $members"
-      set cluster(0:$num) $members
-      append times $members
-    } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+\|\s+([\d.e-]+)\s+\|([\s\d.e-]+)} $line dummy num size middle members ] } {
-      # start a new cluster with only one conf
-      #puts "DEBUG: cluster $num size $size middle $middle"
-      #puts "DEBUG:    -> $members"
-      set cluster(0:$num) $members
-      append times $members
-    } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d.e-]+)} $line dummy members] } {
-      # add conformations to a cluster
-      #puts "DEBUG:    -> $members"
-      append cluster(0:$num) $members
-      append times $members
-    } else {
+      set start_reading 1
+    }
+
+    if {$start_reading == 1} {
+      if { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|\s+([\d.e-]+)\s+([\d.]+)\s+\|([\s\d.e-]+)} $line dummy num size st_rmsd middle mid_rmsd members ] } {
+        # start a new cluster
+        #puts "DEBUG: cluster $num size $size middle $middle"
+        #puts "DEBUG:    -> $members"
+        set cluster(0:$num) $members
+        append times $members
+      } elseif { [regexp {^\s*(\d+)\s+\|\s+([\d.e-]+)\s+\|\s+([\d.e-]+)\s+\|([\s\d.e-]+)} $line dummy num size middle members ] } {
+        # start a new cluster with only one conf
+        #puts "DEBUG: cluster $num size $size middle $middle"
+        #puts "DEBUG:    -> $members"
+        set cluster(0:$num) $members
+        append times $members
+      } elseif { [regexp {^\s+\|\s+\|\s+\|([\s\d.e-]+)} $line dummy members] } {
+        # add conformations to a cluster
+        #puts "DEBUG:    -> $members"
+        append cluster(0:$num) $members
+        append times $members
+      }
     }
   }
 
