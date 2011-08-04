@@ -14,16 +14,11 @@ Makefile
 doc
 )
 
-# Create a local copy of the style sheets
-wget --no-verbose http://physiology.med.cornell.edu/resources/physbio.css
-mv physbio.css physbio_vmd.css
-cat ../vmd.css >> physbio_vmd.css
-chmod 644 physbio_vmd.css
-
 # re-arrange documentation
 mkdir doc
-cp index.html cluster1.png cluster2.png physbio_vmd.css doc
-wget -q -O doc/vmdbackup.css http://physiology.med.cornell.edu/resources/physbio.css http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/vmd.css
+sed -e "/html5-reset\.css/d" -e "/vmd\.css/d" index.html > doc/index.html
+cp cluster1.png cluster2.png doc
+cat ../html5-reset.css ../vmd.css > doc/$plugin.css
 chmod -R ugo+rX doc
 
 # Build list of files
