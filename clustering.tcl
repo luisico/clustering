@@ -63,6 +63,7 @@ proc clustering::cluster {} {
   variable clust_list;           # Listbox with clusters for selected level
   variable level_list;           # Listbox with available clustering levels
   variable conf_list;            # Listbox with conformations for a level
+  variable confs;                # Array with reverse lookup for conformations
   variable join_1members      1; # Join single member clusters in a separate cluster
   variable bb_def      "C CA N"; # Backbone definition (diferent from VMD's definition)
   variable bb_only            0; # Selection modifier (only name CA C N)
@@ -310,6 +311,7 @@ proc clustering::UpdateLevels {} {
   variable level_list
   variable clust_list
   variable conf_list
+  variable confs
   variable clust_mol
   variable cluster
   variable cluster0
@@ -320,6 +322,9 @@ proc clustering::UpdateLevels {} {
   # Reset
   $clust_list delete 0 end
   $conf_list delete 0 end
+  if {[info exists confs]} {
+    unset confs
+  }
   if {[info exists colors]} {
     unset colors
   }
@@ -347,12 +352,19 @@ proc clustering::UpdateLevels {} {
   set nconfs 0
   foreach key [array names cluster0] {
     set nconfs [expr {$nconfs + [llength $cluster0($key)]}]
+    foreach el $cluster0($key) {
+      lappend oconfs $el
+    }
   }
+  set oconfs [lsort -integer $oconfs]
   #puts "DEBUG: nconfs $nconfs"
+  #puts "DEBUG: oconfs $oconfs"
   
   # Populate list of conformations
-  for {set i 0} {$i < $nconfs} {incr i} {
-    $conf_list insert end $i
+  for {set i 0} {$i < [llength $oconfs]} {incr i} {
+    set el [lindex $oconfs $i]
+    $conf_list insert end $el
+    set confs($el) $i
   }
 
   # Populate list of clusters and add representations
@@ -373,6 +385,7 @@ proc clustering::UpdateLevels {} {
 proc clustering::populate {num name} {
   variable clust_list
   variable conf_list
+  variable confs
   variable cluster0
 
   #puts "DEBUG: populate cluster $num ($name): $cluster0($name)"
@@ -385,7 +398,7 @@ proc clustering::populate {num name} {
   $clust_list insert end $name
   $clust_list itemconfigure $num -selectbackground $rgb
   foreach conf $cluster0($name) {
-    $conf_list itemconfigure $conf -selectbackground $rgb
+    $conf_list itemconfigure $confs($conf) -selectbackground $rgb
   }
 }
 
@@ -407,21 +420,22 @@ proc clustering::UpdateClusters {} {
 proc clustering::UpdateConfs {} {
   variable clust_mol
   variable conf_list
+  variable confs
   variable cluster0
   variable clust_list
 
-  # Create reverse list of clusters beloging to confs
+  # Create reverse list of clusters belonging to confs
   for {set c 0} {$c < [array size cluster0]} {incr c 1} {
     set name [$clust_list get $c]
     foreach f $cluster0($name) {
-      set confs($f) $c
+      set rconfs($f) $c
     }
   }
 
   # Create list of selected confs
   for {set i 0} {$i < [$conf_list size]} {incr i} {
     if {[$conf_list selection includes $i]} {
-      lappend on $i
+      lappend on [$conf_list get $i]
     }
   }
   
@@ -434,7 +448,7 @@ proc clustering::UpdateConfs {} {
     return
   }
   foreach f $on {
-    lappend frames($confs($f)) $f
+    lappend frames($rconfs($f)) $f
   }
 
   # apply changes
@@ -536,6 +550,7 @@ proc clustering::clus_onoff {state clus} {
   variable cluster0
   variable clust_list
   variable conf_list
+  variable confs
   variable w
 
   set name [$clust_list get $clus]
@@ -551,12 +566,12 @@ proc clustering::clus_onoff {state clus} {
 
   if { $state == 0 } {
     foreach f $this {
-      $conf_list selection clear $f
+      $conf_list selection clear $confs($f)
     }
     mol showrep $clust_mol $clus off
   } else {
     foreach f $this {
-      $conf_list selection set $f
+      $conf_list selection set $confs($f)
       lappend frames $f
     }
     mol drawframes $clust_mol $clus $frames
