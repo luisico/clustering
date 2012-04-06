@@ -1,5 +1,5 @@
 #
-#              Clustering Tool v1.7
+#              Clustering Tool v2.0
 #
 # A clustering tool to represent clusters in VMD.
 #
@@ -56,23 +56,28 @@ proc clustering::cluster {} {
   variable w;   # TK window
 
   variable webpage "http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster"
-  variable cluster;          # Array with all levels clustering (set on import)
-  variable cluster0;         # Array with current selected level
-  variable clust_file;       # File used to load clustering data
-  variable clust_mol;        # Molecule use to show clustering
-  variable clust_list;       # Listbox with clusters for selected level
-  variable level_list;       # Listbox with available clustering levels
-  variable conf_list;        # Listbox with conformations for a level
-  variable join_1members  1; # Join single member clusters in a separate cluster
-  variable bb_def  "C CA N"; # Backbone definition (diferent from VMD's definition)
-  variable bb_only        0; # Selection modifier (only name CA C N)
-  variable trace_only     0; # Selection modifier (only name CA)
-  variable noh            1; # Selection modifier (no hydrogens)
-  variable calc_nclusters 5; # Calculation options (number of clusters)
-  variable calc_cutoff  1.0; # Calculation options (cutoff)
-  variable calc_first     0; # Calculation options (first frame)
-  variable calc_last     -1; # Calculation options (last frame)
-  variable calc_step      1; # Calculation options (frame step)
+  variable cluster;              # Array with all levels clustering (set on import)
+  variable cluster0;             # Array with current selected level
+  variable clust_file;           # File used to load clustering data
+  variable clust_mol;            # Molecule use to show clustering
+  variable clust_list;           # Listbox with clusters for selected level
+  variable level_list;           # Listbox with available clustering levels
+  variable conf_list;            # Listbox with conformations for a level
+  variable join_1members      1; # Join single member clusters in a separate cluster
+  variable bb_def      "C CA N"; # Backbone definition (diferent from VMD's definition)
+  variable bb_only            0; # Selection modifier (only name CA C N)
+  variable trace_only         0; # Selection modifier (only name CA)
+  variable noh                1; # Selection modifier (no hydrogens)
+
+  # Variables for measure cluster
+  variable calc_num           5; # number of clusters
+  variable calc_cutoff      1.0; # cutoff
+  variable calc_first         0; # first frame
+  variable calc_last         -1; # last frame
+  variable calc_step          1; # frame step
+  variable calc_distfunc "rmsd"; # distance function
+  variable calc_selupdate     0; # selection update
+  variable calc_weight   "none"; # weighting factor
   global vmd_initialize_structure
 
   if {[molinfo num] > 0} {
@@ -120,7 +125,7 @@ proc clustering::cluster {} {
   
   # Use measure cluster
   # -------------
-  labelframe $w.calc -text "Use internal cluster analysis" -relief ridge -bd 2
+  labelframe $w.calc -text "Use measure cluster" -relief ridge -bd 2
   pack $w.calc -side top -fill x -anchor nw
 
   frame $w.calc.buttons
@@ -141,13 +146,13 @@ proc clustering::cluster {} {
   label $w.calc.options.1.mol.label -text "Mol:"
   menubutton $w.calc.options.1.mol.value -relief raised -bd 2 -direction flush \
     -textvariable [namespace current]::clust_mol -menu $w.calc.options.1.mol.value.menu
-  menu $w.calc.options.1.mol.value.menu
-  pack  $w.calc.options.1.mol.label $w.calc.options.1.mol.value -side left
+  menu $w.calc.options.1.mol.value.menu -tearoff no
+  pack $w.calc.options.1.mol.label $w.calc.options.1.mol.value -side left
 
   frame $w.calc.options.1.ncluster
   pack $w.calc.options.1.ncluster -side left -anchor nw
   label $w.calc.options.1.ncluster.label -text "N clusters:"
-  entry $w.calc.options.1.ncluster.value -width 3 -textvariable [namespace current]::calc_nclusters
+  entry $w.calc.options.1.ncluster.value -width 3 -textvariable [namespace current]::calc_num
   pack $w.calc.options.1.ncluster.label $w.calc.options.1.ncluster.value -side left -anchor nw
 
   frame $w.calc.options.1.cutoff
@@ -176,6 +181,36 @@ proc clustering::cluster {} {
   label $w.calc.options.2.step.label -text "Step:"
   entry $w.calc.options.2.step.value -width 4 -textvariable [namespace current]::calc_step
   pack $w.calc.options.2.step.label $w.calc.options.2.step.value -side left -anchor nw
+
+  frame $w.calc.options.3
+  pack $w.calc.options.3 -side top -anchor nw
+
+  frame $w.calc.options.3.distfunc
+  pack $w.calc.options.3.distfunc -side left -anchor nw
+
+  label $w.calc.options.3.distfunc.label -text "Function:"
+  menubutton $w.calc.options.3.distfunc.value -relief raised -bd 2 -direction flush \
+    -textvariable [namespace current]::calc_distfunc -menu $w.calc.options.3.distfunc.value.menu
+  menu $w.calc.options.3.distfunc.value.menu -tearoff no
+  foreach distfunc [list rmsd fitrmsd rgyrd] {
+    $w.calc.options.3.distfunc.value.menu add radiobutton -value $distfunc -label $distfunc -variable [namespace current]::calc_distfunc
+  }
+  pack $w.calc.options.3.distfunc.label $w.calc.options.3.distfunc.value -side left
+
+  frame $w.calc.options.3.weight
+  pack $w.calc.options.3.weight -side left -anchor nw
+
+  label $w.calc.options.3.weight.label -text "Weight:"
+  menubutton $w.calc.options.3.weight.value -relief raised -bd 2 -direction flush \
+    -textvariable [namespace current]::calc_weight -menu $w.calc.options.3.weight.value.menu
+  menu $w.calc.options.3.weight.value.menu -tearoff no
+  foreach field [list none user user2 user3 user4 radius mass charge beta occupancy] {
+    $w.calc.options.3.weight.value.menu add radiobutton -value $field -label $field -variable [namespace current]::calc_weight
+  }
+  pack $w.calc.options.3.weight.label $w.calc.options.3.weight.value -side left
+
+  checkbutton $w.calc.options.3.selupdate -text "Selupdate" -variable [namespace current]::calc_selupdate
+  pack $w.calc.options.3.selupdate -side left
 
   # Selection frame
   # -------------
@@ -325,7 +360,6 @@ proc clustering::UpdateLevels {} {
     regsub "$level:" [lindex $names $num] {} name
     [namespace current]::populate $num $name
     [namespace current]::add_rep $num $name
-    
   }
 
   $clust_list selection set 0 [expr {$nclusters-1}]
@@ -341,7 +375,7 @@ proc clustering::populate {num name} {
   variable conf_list
   variable cluster0
 
-  #puts "DEBUG: populate cluster $num ($name)"
+  #puts "DEBUG: populate cluster $num ($name): $cluster0($name)"
 
   # Choose color
   set col [[namespace current]::next_color]
@@ -859,11 +893,14 @@ proc clustering::calculate {} {
   variable cluster
   variable level_list
   variable clust_mol
-  variable calc_nclusters
+  variable calc_num
   variable calc_cutoff
   variable calc_first
   variable calc_last
   variable calc_step
+  variable calc_distfunc
+  variable calc_selupdate
+  variable calc_weight
 
   # Get selection
   set seltext [[namespace current]::set_sel]
@@ -874,7 +911,9 @@ proc clustering::calculate {} {
   set sel [atomselect $clust_mol $seltext]
 
   # Cluster
-  set result [measure cluster $sel num $calc_nclusters cutoff $calc_cutoff first $calc_first last $calc_last step $calc_step]
+  set result [measure cluster $sel num $calc_num cutoff $calc_cutoff \
+                first $calc_first last $calc_last step $calc_step \
+                distfunc $calc_distfunc selupdate $calc_selupdate weight $calc_weight]
 
   set nclusters [llength $result]
 
