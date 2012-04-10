@@ -256,7 +256,7 @@ proc clustering::cluster {} {
   # Data / Level
   frame $w.result.data.level
   label $w.result.data.level.label -text "Levels:"
-  pack  $w.result.data.level.label -side top
+  pack  $w.result.data.level.label -side top -anchor nw
   set level_list [listbox $w.result.data.level.listbox -selectmode single -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.level.scroll set}] ]
   pack  $level_list -side left -fill both -expand 1
   scrollbar $w.result.data.level.scroll -command [namespace code {$level_list yview}]
@@ -269,7 +269,7 @@ proc clustering::cluster {} {
   pack $w.result.data.cluster -side left -fill both -expand 1
 
   label $w.result.data.cluster.label -text "Clusters:"
-  pack  $w.result.data.cluster.label -side top
+  pack  $w.result.data.cluster.label -side top -anchor nw
   set clust_list [listbox $w.result.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.cluster.scroll set}] ]
   pack  $clust_list -side left -fill both -expand 1
   scrollbar $w.result.data.cluster.scroll -command [namespace code {$clust_list yview}]
@@ -289,7 +289,7 @@ proc clustering::cluster {} {
   pack $w.result.data.confs -side left -fill both -expand 1
 
   label $w.result.data.confs.label -text "Confs:"
-  pack  $w.result.data.confs.label -side top
+  pack  $w.result.data.confs.label -side top -anchor nw
   set conf_list [listbox $w.result.data.confs.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.confs.scroll set}] ]
   pack $conf_list -side left -fill both -expand 1
   scrollbar $w.result.data.confs.scroll -command [namespace code {$conf_list yview}]
