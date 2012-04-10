@@ -150,59 +150,58 @@ proc clustering::cluster {} {
   menu $w.calc.options.1.mol.value.menu -tearoff no
   pack $w.calc.options.1.mol.label $w.calc.options.1.mol.value -side left
 
-  frame $w.calc.options.1.ncluster
-  pack $w.calc.options.1.ncluster -side left -anchor nw
-  label $w.calc.options.1.ncluster.label -text "N clusters:"
-  entry $w.calc.options.1.ncluster.value -width 3 -textvariable [namespace current]::calc_num
-  pack $w.calc.options.1.ncluster.label $w.calc.options.1.ncluster.value -side left -anchor nw
+  frame $w.calc.options.1.first
+  pack $w.calc.options.1.first -side left -anchor nw
+  label $w.calc.options.1.first.label -text "First:"
+  entry $w.calc.options.1.first.value -width 5 -textvariable [namespace current]::calc_first
+  pack $w.calc.options.1.first.label $w.calc.options.1.first.value -side left -anchor nw
 
-  frame $w.calc.options.1.cutoff
-  pack $w.calc.options.1.cutoff -side left -anchor nw
-  label $w.calc.options.1.cutoff.label -text "Cutoff:"
-  entry $w.calc.options.1.cutoff.value -width 5 -textvariable [namespace current]::calc_cutoff
-  pack $w.calc.options.1.cutoff.label $w.calc.options.1.cutoff.value -side left -anchor nw
+  frame $w.calc.options.1.last
+  pack $w.calc.options.1.last -side left -anchor nw
+  label $w.calc.options.1.last.label -text "Last:"
+  entry $w.calc.options.1.last.value -width 5 -textvariable [namespace current]::calc_last
+  pack $w.calc.options.1.last.label $w.calc.options.1.last.value -side left -anchor nw
+
+  frame $w.calc.options.1.step
+  pack $w.calc.options.1.step -side left -anchor nw
+  label $w.calc.options.1.step.label -text "Step:"
+  entry $w.calc.options.1.step.value -width 5 -textvariable [namespace current]::calc_step
+  pack $w.calc.options.1.step.label $w.calc.options.1.step.value -side left -anchor nw
 
   frame $w.calc.options.2
-  pack $w.calc.options.2 -side top -anchor nw
+  pack $w.calc.options.2 -side top -anchor nw -fill x -expand 1
 
-  frame $w.calc.options.2.first
-  pack $w.calc.options.2.first -side left -anchor nw
-  label $w.calc.options.2.first.label -text "First:"
-  entry $w.calc.options.2.first.value -width 4 -textvariable [namespace current]::calc_first
-  pack $w.calc.options.2.first.label $w.calc.options.2.first.value -side left -anchor nw
+  frame $w.calc.options.2.ncluster
+  pack $w.calc.options.2.ncluster -side left -anchor nw
+  label $w.calc.options.2.ncluster.label -text "Num:"
+  entry $w.calc.options.2.ncluster.value -width 3 -textvariable [namespace current]::calc_num
+  pack $w.calc.options.2.ncluster.label $w.calc.options.2.ncluster.value -side left -anchor nw
 
-  frame $w.calc.options.2.last
-  pack $w.calc.options.2.last -side left -anchor nw
-  label $w.calc.options.2.last.label -text "Last:"
-  entry $w.calc.options.2.last.value -width 4 -textvariable [namespace current]::calc_last
-  pack $w.calc.options.2.last.label $w.calc.options.2.last.value -side left -anchor nw
+  frame $w.calc.options.2.cutoff
+  pack $w.calc.options.2.cutoff -side left -anchor nw
+  label $w.calc.options.2.cutoff.label -text "Cutoff:"
+  entry $w.calc.options.2.cutoff.value -width 5 -textvariable [namespace current]::calc_cutoff
+  pack $w.calc.options.2.cutoff.label $w.calc.options.2.cutoff.value -side left -anchor nw
 
-  frame $w.calc.options.2.step
-  pack $w.calc.options.2.step -side left -anchor nw
-  label $w.calc.options.2.step.label -text "Step:"
-  entry $w.calc.options.2.step.value -width 4 -textvariable [namespace current]::calc_step
-  pack $w.calc.options.2.step.label $w.calc.options.2.step.value -side left -anchor nw
+  frame $w.calc.options.2.distfunc
+  pack $w.calc.options.2.distfunc -side left -anchor nw -fill x -expand 1
+  label $w.calc.options.2.distfunc.label -text "Function:"
+  menubutton $w.calc.options.2.distfunc.value -relief raised -bd 2 -direction flush \
+    -textvariable [namespace current]::calc_distfunc -menu $w.calc.options.2.distfunc.value.menu
+  menu $w.calc.options.2.distfunc.value.menu -tearoff no
+  foreach distfunc [list rmsd fitrmsd rgyrd] {
+    $w.calc.options.2.distfunc.value.menu add radiobutton -value $distfunc -label $distfunc -variable [namespace current]::calc_distfunc
+  }
+  pack $w.calc.options.2.distfunc.label -side left
+  pack $w.calc.options.2.distfunc.value -side left -fill x -expand 1
 
   frame $w.calc.options.3
   pack $w.calc.options.3 -side top -anchor nw
 
-  frame $w.calc.options.3.distfunc
-  pack $w.calc.options.3.distfunc -side left -anchor nw
-
-  label $w.calc.options.3.distfunc.label -text "Function:"
-  menubutton $w.calc.options.3.distfunc.value -relief raised -bd 2 -direction flush \
-    -textvariable [namespace current]::calc_distfunc -menu $w.calc.options.3.distfunc.value.menu
-  menu $w.calc.options.3.distfunc.value.menu -tearoff no
-  foreach distfunc [list rmsd fitrmsd rgyrd] {
-    $w.calc.options.3.distfunc.value.menu add radiobutton -value $distfunc -label $distfunc -variable [namespace current]::calc_distfunc
-  }
-  pack $w.calc.options.3.distfunc.label $w.calc.options.3.distfunc.value -side left
-
   frame $w.calc.options.3.weight
   pack $w.calc.options.3.weight -side left -anchor nw
-
   label $w.calc.options.3.weight.label -text "Weight:"
-  menubutton $w.calc.options.3.weight.value -relief raised -bd 2 -direction flush \
+  menubutton $w.calc.options.3.weight.value -width 10 -relief raised -bd 2 -direction flush \
     -textvariable [namespace current]::calc_weight -menu $w.calc.options.3.weight.value.menu
   menu $w.calc.options.3.weight.value.menu -tearoff no
   foreach field [list none user user2 user3 user4 radius mass charge beta occupancy] {
