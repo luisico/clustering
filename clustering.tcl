@@ -257,10 +257,10 @@ proc clustering::cluster {} {
   frame $w.result.data.level
   label $w.result.data.level.label -text "Levels:"
   pack  $w.result.data.level.label -side top -anchor nw
-  set level_list [listbox $w.result.data.level.listbox -selectmode single -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.level.scroll set}] ]
-  pack  $level_list -side left -fill both -expand 1
+  set level_list [listbox $w.result.data.level.listbox -selectmode single -activestyle dotbox -width 5 -exportselection 0 -yscroll [namespace code {$w.result.data.level.scroll set}] ]
+  pack  $level_list -side left -fill both
   scrollbar $w.result.data.level.scroll -command [namespace code {$level_list yview}]
-  pack  $w.result.data.level.scroll -side left -fill y -expand 1
+  pack  $w.result.data.level.scroll -side left -fill y
   bind $level_list <<ListboxSelect>> [namespace code UpdateLevels]
   pack $w.result.data.level -side left -fill both -expand 1
 
@@ -270,10 +270,10 @@ proc clustering::cluster {} {
 
   label $w.result.data.cluster.label -text "Clusters:"
   pack  $w.result.data.cluster.label -side top -anchor nw
-  set clust_list [listbox $w.result.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.cluster.scroll set}] ]
+  set clust_list [listbox $w.result.data.cluster.listbox -selectmode multiple -activestyle dotbox -width 10 -exportselection 0 -yscroll [namespace code {$w.result.data.cluster.scroll set}] ]
   pack  $clust_list -side left -fill both -expand 1
   scrollbar $w.result.data.cluster.scroll -command [namespace code {$clust_list yview}]
-  pack  $w.result.data.cluster.scroll -side left -fill y -expand 1
+  pack  $w.result.data.cluster.scroll -side left -fill y
   bind $clust_list <<ListboxSelect>> [namespace code UpdateClusters]
 
   # Data / buttons
@@ -290,10 +290,10 @@ proc clustering::cluster {} {
 
   label $w.result.data.confs.label -text "Confs:"
   pack  $w.result.data.confs.label -side top -anchor nw
-  set conf_list [listbox $w.result.data.confs.listbox -selectmode multiple -activestyle dotbox -width 3 -exportselection 0 -yscroll [namespace code {$w.result.data.confs.scroll set}] ]
+  set conf_list [listbox $w.result.data.confs.listbox -selectmode multiple -activestyle dotbox -width 5 -exportselection 0 -yscroll [namespace code {$w.result.data.confs.scroll set}] ]
   pack $conf_list -side left -fill both -expand 1
   scrollbar $w.result.data.confs.scroll -command [namespace code {$conf_list yview}]
-  pack  $w.result.data.confs.scroll -side left -fill y -expand 1
+  pack  $w.result.data.confs.scroll -side left -fill y
   bind $conf_list <<ListboxSelect>> [namespace code UpdateConfs]
 
   # Set up the molecule list
@@ -375,7 +375,7 @@ proc clustering::UpdateLevels {} {
 
   $clust_list selection set 0 [expr {$nclusters-1}]
   $conf_list selection set 0 end
-  if {[$clust_list get [expr {$nclusters-1}]] == "none"} {
+  if {[regexp {^none} [$clust_list get [expr {$nclusters-1}]]]} {
     [namespace current]::clus_onoff 0 [expr {$nclusters-1}]
   }
 }
@@ -391,13 +391,14 @@ proc clustering::populate {num name} {
 
   # Choose color
   set col [[namespace current]::next_color]
-  set rgb [index2rgb $col]
+  set rgb [[namespace current]::index2rgb $col]
+  set bw [[namespace current]::bw $rgb]
 
   # Add clusters to list and change conformation color
-  $clust_list insert end $name
-  $clust_list itemconfigure $num -selectbackground $rgb
+  $clust_list insert end [[namespace current]::name_add_count $name]
+  $clust_list itemconfigure $num -selectbackground $rgb -selectforeground $bw
   foreach conf $cluster0($name) {
-    $conf_list itemconfigure $confs($conf) -selectbackground $rgb
+    $conf_list itemconfigure $confs($conf) -selectbackground $rgb -selectforeground $bw
   }
 }
 
@@ -425,7 +426,7 @@ proc clustering::UpdateConfs {} {
 
   # Create reverse list of clusters belonging to confs
   for {set c 0} {$c < [array size cluster0]} {incr c 1} {
-    set name [$clust_list get $c]
+    set name [[namespace current]::name_del_count $c]
     foreach f $cluster0($name) {
       set rconfs($f) $c
     }
@@ -552,7 +553,7 @@ proc clustering::clus_onoff {state clus} {
   variable confs
   variable w
 
-  set name [$clust_list get $clus]
+  set name [[namespace current]::name_del_count $clus]
   #puts "DEBUG: cluster $clus name $name"
 
   if { $state == 0 } {
@@ -627,6 +628,20 @@ proc clustering::index2rgb {i} {
   return [format "#%.${len}X%.${len}X%.${len}X" $r $g $b]
 }
 
+# Select black or white color depending on the brightness of the rgb passed
+proc clustering::bw {rgb} {
+  set r [scan [string range $rgb 1 2] "%2x"]
+  set g [scan [string range $rgb 3 4] "%2x"]
+  set b [scan [string range $rgb 5 6] "%2x"]
+
+  set brightness [expr {$r * 0.299 + $g * 0.587 + $b * 0.114}]
+  if {$brightness < 186} {
+    return "#FFFFFF"
+  } else {
+    return "#000000"
+  }
+}
+
 # Parse selection
 proc clustering::set_sel {} {
   variable w
@@ -691,6 +706,20 @@ proc clustering::ctrlbb { obj } {
   } elseif {$obj == "noh"} {
     set trace_only 0
     set bb_only 0
+  }
+}
+
+# Add number of conformations to cluster name
+proc clustering::name_add_count {name} {
+  variable cluster0
+  return "$name ([llength $cluster0($name)])"
+}
+
+# Remove number of conformations from cluster name
+proc clustering::name_del_count {index} {
+  variable clust_list
+  if { [ regexp {^([0-9]+|none) \(} [$clust_list get $index] dummy name ] } {
+    return $name
   }
 }
 
