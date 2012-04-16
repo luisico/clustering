@@ -3,13 +3,13 @@
   <head>
     <meta charset="iso-8859-1">
 
-    <title>Cluster plugin for VMD</title>
+    <title>Clustering plugin for VMD</title>
 
     <meta name="author" content="Luis Gracia">
 
     <link rel="stylesheet" href="../html5-reset.css">
     <link rel="stylesheet" href="../vmd.css">
-    <link rel="stylesheet" href="cluster.css">
+    <link rel="stylesheet" href="clustering.css">
   </head>
 
   <body>
@@ -17,7 +17,7 @@
       <header>
         <a href="http://physiology.med.cornell.edu/"><img src="http://physiology.med.cornell.edu/images/header.jpg" alt="physiology"/></a>
         <div id="back-main"><a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins">VMD plugins at WMC Physiology &amp; Biophysics</a></div>
-        <h1>Cluster: Clustering Tool</h1>
+        <h1>Clustering: Clustering Tool</h1>
       </header>
 
       <nav>
@@ -35,10 +35,11 @@
           <header>
             <h1>Description</h1>
           </header>
-          <em>Cluster</em> is a VMD plugin to visualize clusters of conformations of a structure. Each conformation is color coded according to the cluster to which it belongs. This is done by creating one representation for each cluster, and setting the <em>Draw Multiple frames</em> variable to the corresponding frame numbers.
+          <em>Clustering</em> is a VMD plugin to visualize clusters of conformations of a structure. Each conformation is color coded according to the cluster to which it belongs. This is done by creating one representation for each cluster, and setting the <em>Draw Multiple frames</em> variable to the corresponding frame numbers.
           
           <p>Features include:</p>
           <ul>
+            <li>Compute clusters using VMD's internal <a href="http://www.ks.uiuc.edu/Research/vmd/current/ug/node136.html">measure cluster</a> command.</li>
             <li>Import results from:
               <ul>
                 <li><a href="http://neon.chem.le.ac.uk/nmrclust/">NMRCLUSTER</a> (link doesn't work anymore).</li>
@@ -51,13 +52,13 @@
             <li>Color conformations by cluster.</li>
             <li>Selection of clusters and/or conformations to display.</li>
             <li>Multiple levels of clustering.</li>
-            <li>Custom representation.</li>
+            <li>Custom representations.</li>
             <li>Join single member clusters in a separate cluster.</li>
           </ul>
           
           <div class="center columns">
-            <img src="cluster1.png" name="cluster1">
-            <img src="cluster2.png" name="cluster2">
+            <img src="clustering1.png" name="clustering1">
+            <img src="clustering2.png" name="clustering2">
           </div>
         </section>
         
@@ -66,12 +67,13 @@
             <h1>Manual</h1>
           </header>
 
-          <p>To use the <em>Cluster plugin</em> you need to:
+          <p>To use the <em>Clustering plugin</em> you need to:
             
             <ol>
               <li><b>Load a trajectory</b> of the conformations used for clustering into VMD.</li>
               <li>Define the <b>atom selection</b> and <b>molecule</b> to use as representation in vmd.</li>
-              <li><b>Generate</b> the clusters with one of the following external utilities and <b>Import</b> the results into the plugin:
+              <li><b>Generate</b> the clusters with VMD's internal <a href="http://www.ks.uiuc.edu/Research/vmd/current/ug/node136.html">measure cluster</a> command. More information about 'measure cluster' can be found in VMD's manual. All options in Clustering's <em>Use measure cluster</em> section correspond to the options available to 'measure cluster'.</li>
+              <li><b>Import</b> results from a third party solution. The following utilities are supported:
                 <ul>
                   <li><b>NMRCLUSTER</b>: import the <em>"Cluster.log"</em> file. Only a level (0) will be available. Outliers will be splitted in different clusters. Use the <em>Join 1 member clusters</em> to cluster them together.</li>
                   <li><b>Xcluster</b>: import the <em>".clg"</em> file. All levels of interest must be saved in order to display them in VMD (look in the Xcluster manual for the <em>Writecls</em> command).</li>
@@ -90,18 +92,18 @@ cluster = agnes(rmsd, diss=T)</pre>
 levels = cutree(cluster, k=2:5)</pre>
                         will output the cluster membership of each object for levels 2 to 5.
                       </li>
-                      <li>Write the results to a file to input into the Cluster plugin:
+                      <li>Write the results to a file to input into the Clustering plugin:
                         <pre>
 write.table(levels, file='levels.dat', quote=F)</pre>
                       </li>
-                      <li>Import the file into the Cluster plugin.</li>
+                      <li>Import the file into the Clustering plugin.</li>
                     </ol>
                   </li>
                   <li><b>Gromacs (g_cluster)</b>: import the <em>"cluster.log"</em> file. Only a level (0) will be available. <em>g_cluster</em> timesteps are automatically mapped into VMD frames. <em>Thanks to Andrea Carotti for all his help with the testing</em>.</li>
                   <li><b>Charmm</b>: import the <em>output membership file</em> file.</li>
                 </ul>
               </li>
-              <li>Managing the GUI:
+              <li><b>Viewing clusters</b>:
                 <ul>
                   <li>Select the <b>level</b> you want to see. The list of clusters will be updated together with the colors of the conformations. All clusters will be displayed when you change the level.</li>
                   <li>Select/Deselect <b>clusters</b> to activate/deactivate them.</li>
@@ -122,8 +124,19 @@ write.table(levels, file='levels.dat', quote=F)</pre>
 
           <section class="plugin">
             <header>
+              <span>[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster/versions/cluster-v2.0.tgz">download</a>]</span>
+              <h1><a name="latest">2.0</a> (16 Apr'12)</h1>
+            </header>
+            <p>Change log:</p>
+            <ul>
+	      <li>Add support for VMD's measure cluster command.</li>
+            </ul>
+          </section>
+
+          <section class="plugin">
+            <header>
               <span>[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster/versions/cluster-v1.8.tgz">download</a>]</span>
-              <h1><a name="latest">1.8</a> (06 Feb'12)</h1>
+              <h1>1.8 (06 Feb'12)</h1>
             </header>
             <p>Change log:</p>
             <ul>
@@ -134,7 +147,7 @@ write.table(levels, file='levels.dat', quote=F)</pre>
           <section class="plugin">
             <header>
               <span>[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster/versions/cluster-v1.7.tgz">download</a>]</span>
-              <h1><a name="latest">1.7</a> (26 Feb'08)</h1>
+              <h1>1.7 (26 Feb'08)</h1>
             </header>
             <p>Change log:</p>
             <ul>
@@ -222,8 +235,8 @@ write.table(levels, file='levels.dat', quote=F)</pre>
           <p>A small guide on how to install third party VMD plugins can be found <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/installation.html">here</a>. In summary:</p>
             <pre>
 set auto_path [linsert $auto_path 0 {/path/to/plugins/directory}]
-vmd_install_extension clustering clustering "WMC PhysBio/Cluster"</pre>
-            <p>The Cluster plugin should be accessible from the <em>Extensions menu</em>.</p>
+vmd_install_extension clustering clustering "WMC PhysBio/Clustering"</pre>
+            <p>The Clustering plugin should be accessible from the <em>Extensions menu</em>.</p>
         </section>
 
         <section id="author">
@@ -242,7 +255,7 @@ vmd_install_extension clustering clustering "WMC PhysBio/Cluster"</pre>
         <span id="copyright">Copyright &copy; 2004-2012, Weill Cornell Medical College. All Rights Reserved</span>
         <address>
           <a href="mailto:lug2002@med.cornell.edu">Luis Gracia</a>
-          | last updated: Monday, February 6 2012
+          | last updated: Monday, April 16 2012
           <!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
         </address>
       </footer>

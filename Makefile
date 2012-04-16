@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = clustering.tcl pkgIndex.tcl
-VMVERSION = 1.1
+VMVERSION = 2.0
 DIR = $(PLUGINDIR)/noarch/tcl/clustering$(VMVERSION)
 
 bins:

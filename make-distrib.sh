@@ -3,7 +3,7 @@
 version=$1
 echo "Packing version ${version:?}"
 
-plugin=cluster
+plugin=clustering
 dir=$plugin
 tar=$plugin-v$version.tgz
 
@@ -17,7 +17,7 @@ doc
 # re-arrange documentation
 mkdir doc
 sed -e "/html5-reset\.css/d" -e "/vmd\.css/d" index.html > doc/index.html
-cp cluster1.png cluster2.png doc
+cp clustering1.png clustering2.png doc
 cat ../html5-reset.css ../vmd.css > doc/$plugin.css
 chmod -R ugo+rX doc
 
