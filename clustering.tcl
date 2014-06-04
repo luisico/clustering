@@ -11,7 +11,7 @@
 #
 #      Scientific Software Specialist
 #      Department of Physiology & Biophysics
-#      Weill Cornell Medical College 
+#      Weill Cornell Medical College
 #      1300 York Avenue, Rm LC-501F
 #      New York, NY 10065
 #
@@ -21,8 +21,6 @@
 # -------------
 # See the index.html file distributed with this file. For more update documentation see
 # http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/cluster
-
-## $Id$
 
 # ToDo:
 # - control clusters of different molecules:
@@ -91,7 +89,7 @@ proc clustering::cluster {} {
     return
   }
 
-   # GUI look
+  # GUI look
   option add *clustering.*borderWidth 1
   option add *clustering.*Button.padY 0
   option add *clustering.*Menubutton.padY 0
@@ -123,7 +121,7 @@ proc clustering::cluster {} {
   menu $w.menubar.help.menu -tearoff no
   $w.menubar.help.menu add command -label "Help" -command "vmd_open_url $webpage"
   $w.menubar.help.menu add command -label "About" -command [namespace current]::about
-  
+
   # Use measure cluster
   # -------------
   labelframe $w.calc -text "Use measure cluster" -relief ridge -bd 2
@@ -220,7 +218,7 @@ proc clustering::cluster {} {
   # Selection
   frame $w.sel.left
   pack $w.sel.left -side left -fill both -expand yes
-  
+
   text $w.sel.left.sel -height 3 -width 25 -highlightthickness 0 -selectborderwidth 0 -exportselection yes -wrap word -relief sunken -bd 1
   pack $w.sel.left.sel -side top -fill both -expand yes
   $w.sel.left.sel insert end "protein"
@@ -300,7 +298,7 @@ proc clustering::cluster {} {
   trace variable vmd_initialize_structure w [namespace current]::UpdateMolecules
   [namespace current]::UpdateMolecules
 }
-  
+
 
 #############################################################################
 # Update GUI
@@ -337,7 +335,7 @@ proc clustering::UpdateLevels {} {
     regsub "$level:" $key {} name
     set cluster0($name) $cluster($key)
   }
-  
+
   # Join 1 members if requested
   if {$join_1members} {
     [namespace current]::join_1members
@@ -358,7 +356,7 @@ proc clustering::UpdateLevels {} {
   set oconfs [lsort -integer $oconfs]
   #puts "DEBUG: nconfs $nconfs"
   #puts "DEBUG: oconfs $oconfs"
-  
+
   # Populate list of conformations
   for {set i 0} {$i < [llength $oconfs]} {incr i} {
     set el [lindex $oconfs $i]
@@ -438,7 +436,7 @@ proc clustering::UpdateConfs {} {
       lappend on [$conf_list get $i]
     }
   }
-  
+
   # create new cluster
   if {![info exists on]} {
     for {set c 0} {$c < [array size cluster0]} {incr c} {
@@ -459,8 +457,8 @@ proc clustering::UpdateConfs {} {
       mol showrep $clust_mol $c off
     } else {
       if {[$clust_list selection includes $c] == 0} {
-	$clust_list selection set $c
-	mol showrep $clust_mol $c on
+        $clust_list selection set $c
+        mol showrep $clust_mol $c on
       }
       mol drawframes $clust_mol $c $frames($c)
     }
@@ -472,7 +470,7 @@ proc clustering::UpdateMolecules {args} {
   # Code adapted from the ramaplot plugin
   variable w
   variable clust_mol
-  
+
   set mollist [molinfo list]
 
   # Update the molecule browser
@@ -481,9 +479,9 @@ proc clustering::UpdateMolecules {args} {
   if { [llength $mollist] != 0 } {
     foreach id $mollist {
       if {[molinfo $id get filetype] != "graphics"} {
-        $w.calc.options.1.mol.value configure -state normal 
+        $w.calc.options.1.mol.value configure -state normal
         $w.calc.options.1.mol.value.menu add radiobutton -value $id \
-	  -label "$id [molinfo $id get name]" -variable [namespace current]::clust_mol
+          -label "$id [molinfo $id get name]" -variable [namespace current]::clust_mol
       }
     }
   }
@@ -495,7 +493,7 @@ proc clustering::UpdateSel {} {
   variable clust_mol
 
   for {set i 0} {$i < [array size cluster0]} {incr i} {
-      mol modselect $i $clust_mol [[namespace current]::set_sel]
+    mol modselect $i $clust_mol [[namespace current]::set_sel]
   }
 }
 
@@ -510,10 +508,10 @@ proc clustering::add_rep {num name} {
   variable clust_list
   variable colors
 
-#  puts "LGV: [llength $cluster0($name)]"
-#  if {[llength $cluster0($name)] == 0} {
-#    return
-#  }
+  # puts "LGV: [llength $cluster0($name)]"
+  # if {[llength $cluster0($name)] == 0} {
+  #   return
+  # }
 
   foreach f $cluster0($name) {
     lappend frames $f
@@ -673,9 +671,9 @@ proc clustering::join_1members {} {
     #puts "$name - $cluster0($name)"
     if {[llength $cluster0($name)] == 1} {
       if [info exists cluster0(none)] {
-	set cluster0(none) [concat $cluster0(none) $cluster0($name)]
+        set cluster0(none) [concat $cluster0(none) $cluster0($name)]
       } else {
-	set cluster0(none) $cluster0($name)
+        set cluster0(none) $cluster0($name)
       }
       unset cluster0($name)
     }
@@ -728,17 +726,17 @@ proc clustering::about { {parent .clustering} } {
   variable webpage
   set vn [package present clustering]
   tk_messageBox -title "About Clustering v$vn" -parent $parent -message \
-"Clustering v$vn
+    "Clustering v$vn
 
 Cluster is a VMD plugin to visualize clusters of conformations of a structure.
 
 More information at:
 $webpage
 
-Copyright (C) Luis Gracia <lug2002@med.cornell.edu> 
+Copyright (C) Luis Gracia <lug2002@med.cornell.edu>
 
 "
-}   
+}
 
 
 #############################################################################
@@ -774,15 +772,15 @@ proc clustering::import_nmrcluster {fileid} {
       set cluster(0:$i) [[namespace current]::decrease_list $data]
     } elseif { [ regexp {^Outliers:([ 0-9]+)} $line dummy data ] } {
       foreach d $data {
-	incr i 1
-	set cluster(0:$i) [expr {$d - 1}]
+        incr i 1
+        set cluster(0:$i) [expr {$d - 1}]
       }
     }
   }
-  
+
   $level_list insert end 0
   $level_list selection set 0
-  
+
   [namespace current]::UpdateLevels
 }
 
@@ -805,9 +803,9 @@ proc clustering::import_xcluster {fileid} {
       #puts "DEBUG: adding level $level cluster $num data $data"
     }
   }
-  
+
   $level_list selection set 0
-  
+
   [namespace current]::UpdateLevels
 }
 
@@ -818,7 +816,7 @@ proc clustering::import_cutree {fileid} {
 
   # Read data
   set sep { }
-  
+
   # - levels
   gets $fileid line
   set levels [split $line $sep]
@@ -826,7 +824,7 @@ proc clustering::import_cutree {fileid} {
   foreach level $levels {
     $level_list insert end $level
   }
-  
+
   # - membership
   while {![eof $fileid]} {
     gets $fileid line
@@ -838,15 +836,15 @@ proc clustering::import_cutree {fileid} {
       set membership [lrange $temp 1 end]
       #puts "DEBUG: obj $obj; membership [join $membership {, }]"
       for {set i 0} {$i < [llength $membership]} {incr i} {
-	set level [lindex $levels $i]
-	set num [lindex $membership $i]
-	#puts "DEBUG: assign $i - $level - $num"
-	lappend cluster($level:$num) [expr {$obj - 1}]
+        set level [lindex $levels $i]
+        set num [lindex $membership $i]
+        #puts "DEBUG: assign $i - $level - $num"
+        lappend cluster($level:$num) [expr {$obj - 1}]
       }
     }
   }
   $level_list selection set 0
-  
+
   [namespace current]::UpdateLevels
 }
 
@@ -981,7 +979,7 @@ proc clustering::calculate {} {
 
     $level_list insert end 0
     $level_list selection set 0
-    
+
     [namespace current]::UpdateLevels
   }
 }
