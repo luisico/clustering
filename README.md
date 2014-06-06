@@ -56,7 +56,7 @@ To use the Clustering plugin you need to:
 
 ### R
 
-Ref: [R](http://www.r-project.org) with [hierarchical clustering](http://cran.r-project.org/src/contrib/Descriptions/cluster.html)
+Ref: [R](http://www.r-project.org) with [hierarchical clustering](http://cran.r-project.org/web/views/Cluster.html)
 
 First obtain the rmsd between structures. You can use [iTrajComp](http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/itrajcomp) for an easy way of doing this (I suggest writing the results in matrix format).
 
@@ -90,13 +90,13 @@ Import Xcluster's *.clg* output file into *Clustering*. All levels of interest m
 ### Gromacs
 
 Ref: http://www.gromacs.org
-g_cluster: http://www.gromacs.org/documentation/reference/online/g_cluster.html
+g_cluster: http://manual.gromacs.org/online/g_cluster.html
 
 Import the "cluster.log" file. Only a level (0) will be available. g_cluster timesteps are automatically mapped into VMD frames.
 
 ### Charmm
 
-Ref: [Charmm](http://http://www.charmm.org) with the [clustering command](http://http://www.charmm.org/documentation/c35b1/correl.html#%20Cluster)
+Ref: [Charmm](http://www.charmm.org) with the [clustering command](http://www.charmm.org/documentation/c35b1/correl.html#%20Cluster)
 
 Import the *output membership* file into *Clustering*.
 
