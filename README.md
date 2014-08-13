@@ -9,6 +9,7 @@ Features include:
 
 * Compute clusters using VMD's internal [measure cluster](http://www.ks.uiuc.edu/Research/vmd/current/ug/node136.html) command
 * Import results from *R*, *Xcluster*, *Gromacs*, *Charmm*, *NMRCLUSTER*
+* Export cluster membership
 * Color conformations by cluster
 * Selection of clusters and/or conformations to display
 * Multiple levels of clustering
@@ -51,6 +52,7 @@ To use the Clustering plugin you need to:
   * **All** and **None** turn on/off all clusters and conformations.
   * Activate **Join 1 member clusters** to display all single member clusters in a separate cluster (*outl*).
   * The **atom selection** to represent can be changed in the atom selection box. Click *Update Selection* button to apply the changes.
+6. **Export** cluster memberships from the main menu, to the console or to file.
 
 ## Third party importers
 
