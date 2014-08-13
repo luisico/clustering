@@ -115,6 +115,13 @@ proc clustering::cluster {} {
   $w.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
   $w.menubar.import.menu add command -label "Charmm..." -command "[namespace current]::import charmm"
 
+  # Export menu
+  menubutton $w.menubar.export -text "Export" -underline 0 -menu $w.menubar.export.menu
+  pack $w.menubar.export -side left
+  menu $w.menubar.export.menu -tearoff no
+  $w.menubar.export.menu add command -label "Console" -command "[namespace current]::print false"
+  $w.menubar.export.menu add command -label "File..." -command "[namespace current]::print true"
+
   # Menubar / Help menu
   menubutton $w.menubar.help -text "Help" -menu $w.menubar.help.menu
   pack $w.menubar.help -side right
@@ -243,9 +250,6 @@ proc clustering::cluster {} {
 
   button $w.result.options.update -text "Update Views" -command [namespace code UpdateSel]
   pack $w.result.options.update -side left
-
-  button $w.result.options.print -text "Print" -command [namespace code print]
-  pack $w.result.options.print -side left
 
   checkbutton $w.result.options.join -text "Join 1 member clusters" -variable clustering::join_1members -command [namespace code UpdateLevels]
   pack $w.result.options.join -side right
@@ -725,26 +729,37 @@ proc clustering::name_del_count {index} {
 }
 
 # Print clusters
-proc clustering::print {} {
+proc clustering::print {to_file} {
   variable level_list
   variable cluster
   variable conf_list
 
-  foreach level [$level_list get 0 end] {
-    set names [array names cluster $level:*]
-    puts "Level $level ([llength $names] clusters)"
-    puts "cluster, number confs, confs"
-    foreach key [lsort -dictionary $names] {
-      regsub "$level:" $key {} name
-      puts "$name, [llength $cluster($key)], $cluster($key)"
-     }
+  set fileid stdout
+
+  if {$to_file} {
+    set output_file [tk_getSaveFile -title "Output filename" -filetypes [list {"Cluster files" {.out .log .dat .clg}} {"All Files" *}] ]
+    if {$output_file == ""} {
+      return
+    }
+    set fileid [open $output_file "w"]
   }
 
-  # set level [$level_list get [$level_list curselection]]
-  # foreach key [array names cluster $level:*] {
+  foreach level [$level_list get 0 end] {
+    set names [array names cluster $level:*]
+    if {$level > 0} {
+      puts $fileid ""
+    }
+    puts $fileid "Level $level ([llength $names] clusters)"
+    puts $fileid "cluster, number confs, confs"
+    foreach key [lsort -dictionary $names] {
+      regsub "$level:" $key {} name
+      puts $fileid "$name, [llength $cluster($key)], $cluster($key)"
+    }
+  }
 
-  #   regsub "$level:" $key {} name
-  # }
+  if {$to_file} {
+    close $fileid
+  }
 }
 
 # About
