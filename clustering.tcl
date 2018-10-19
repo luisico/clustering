@@ -114,6 +114,7 @@ proc clustering::cluster {} {
   $w.menubar.import.menu add command -label "Cutree (R)..."          -command "[namespace current]::import cutree"
   $w.menubar.import.menu add command -label "Gromacs (g_cluster)..." -command "[namespace current]::import gcluster"
   $w.menubar.import.menu add command -label "Charmm..." -command "[namespace current]::import charmm"
+  $w.menubar.import.menu add command -label "Raw (index list)..." -command "[namespace current]::import raw"
 
   # Menubar / Help menu
   menubutton $w.menubar.help -text "Help" -menu $w.menubar.help.menu
@@ -926,6 +927,25 @@ proc clustering::import_charmm {fileid} {
   [namespace current]::UpdateLevels
 }
 
+# Raw (list of cluster ids)
+proc clustering::import_raw {fileid} {
+  variable level_list
+  variable cluster
+
+  set member 0
+  while {![eof $fileid]} {
+    gets $fileid line
+    if { [llength $line] == 1 } {
+      set ID [expr {int($line)}]
+      lappend cluster(0:$ID) $member
+      incr member
+    }
+  }
+
+  $level_list insert end 0
+  $level_list selection set 0
+  [namespace current]::UpdateLevels
+}
 
 #############################################################################
 # Calculate
