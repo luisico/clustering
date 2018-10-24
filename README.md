@@ -106,6 +106,10 @@ Ref: http://neon.chem.le.ac.uk/nmrclust (link has been down for some time)
 
 Import *Cluster.log* into *Clustering*. Only a level (0) will be available. Outliers will be splitted in different clusters. Check *Join 1 member clusters* to cluster them together.
 
+### Raw cluster indices
+
+A text file containing one line per frame, where the *n*-th line contains one integer which is the index of the cluster containing the *n*-th frame. Supports a single level.
+
 ## Author
 
 Luis Gracia (https://github.com/luisico)
